@@ -1,6 +1,6 @@
 {
     "version": "https://jsonfeed.org/version/1",
-    "title": "2DAMDI",
+    "title": "Documentación DI",
     "description": "",
     "home_page_url": "https://ivanzsasz.github.io/2DAMDI",
     "feed_url": "https://ivanzsasz.github.io/2DAMDI/feed.json",
@@ -13,15 +13,15 @@
             "id": "https://ivanzsasz.github.io/2DAMDI/documentacion-di.html",
             "url": "https://ivanzsasz.github.io/2DAMDI/documentacion-di.html",
             "title": "Documentación DI",
-            "summary": "HOLI",
-            "content_html": "<p>HOLI</p>\n<p> </p>",
+            "summary": "Pomodoro",
+            "content_html": "<p>Pomodoro</p>\n<p> </p>",
             "author": {
                 "name": "Tadeo"
             },
             "tags": [
             ],
             "date_published": "2025-10-16T23:46:30+02:00",
-            "date_modified": "2025-10-17T00:15:21+02:00"
+            "date_modified": "2025-10-17T00:18:57+02:00"
         }
     ]
 }

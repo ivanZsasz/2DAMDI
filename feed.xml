@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
-    <title>2DAMDI</title>
+    <title>Documentación DI</title>
     <link href="https://ivanzsasz.github.io/2DAMDI/feed.xml" rel="self" />
     <link href="https://ivanzsasz.github.io/2DAMDI" />
-    <updated>2025-10-17T00:15:21+02:00</updated>
+    <updated>2025-10-17T00:18:57+02:00</updated>
     <author>
         <name>Tadeo</name>
     </author>
@@ -20,12 +20,12 @@
         <updated>2025-10-16T23:46:30+02:00</updated>
             <summary>
                 <![CDATA[
-                    HOLI
+                    Pomodoro
                 ]]>
             </summary>
         <content type="html">
             <![CDATA[
-                <p>HOLI</p>
+                <p>Pomodoro</p>
 <p> </p>
             ]]>
         </content>
