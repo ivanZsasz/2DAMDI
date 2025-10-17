@@ -9,19 +9,5 @@
         "name": "Tadeo"
     },
     "items": [
-        {
-            "id": "https://ivanzsasz.github.io/2DAMDI/documentacion-di.html",
-            "url": "https://ivanzsasz.github.io/2DAMDI/documentacion-di.html",
-            "title": "Documentación DI",
-            "summary": "Pomodoro",
-            "content_html": "<p>Pomodoro</p>\n<p> </p>",
-            "author": {
-                "name": "Tadeo"
-            },
-            "tags": [
-            ],
-            "date_published": "2025-10-16T23:46:30+02:00",
-            "date_modified": "2025-10-17T00:18:57+02:00"
-        }
     ]
 }
