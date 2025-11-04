@@ -1,0 +1,2872 @@
+<!DOCTYPE html>
+<html lang="es" class=""> <!-- La clase 'dark' o 'vaporwave' se añadirá aquí -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario Musical Interactivo</title>
+    
+    <!-- Carga de TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Carga de la fuente Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Carga de jsmediatags para leer metadatos de MP3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+
+    <!-- Configuración de Tailwind para la fuente y temas -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Habilita el modo oscuro basado en una clase en <html>
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    // Colores para el tema Vaporwave
+                    colors: {
+                        vapor: {
+                            'primary': '#ff71ce',
+                            'secondary': '#01cdfe',
+                            'bg': '#05040a',
+                            'text': '#f0f0f0',
+                            'accent': '#f9f970',
+                        }
+                    },
+                    // Animación para el fondo Vaporwave
+                    animation: {
+                        'gradient-pan': 'gradient-pan 10s ease infinite',
+                    },
+                    keyframes: {
+                        'gradient-pan': {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                            '100%': { backgroundPosition: '0% 50%' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+
+    <!-- Estilos CSS personalizados -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilos para el tema Vaporwave */
+        html.vaporwave {
+            --color-bg-primary: #05040a;
+            --color-bg-secondary: #1f1f2e;
+            --color-text-primary: #f0f0f0;
+            --color-text-secondary: #01cdfe;
+            --color-accent: #ff71ce;
+            --color-border: #ff71ce;
+        }
+
+        html.vaporwave body {
+            background: linear-gradient(-45deg, #05040a, #2a0c44, #01cdfe, #ff71ce);
+            background-size: 400% 400%;
+            animation: gradient-pan 10s ease infinite;
+            color: var(--color-text-primary);
+        }
+
+        html.vaporwave .bg-card {
+            background-color: rgba(31, 31, 46, 0.9); /* Fondo de tarjeta semitransparente */
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--color-border);
+        }
+        
+        html.vaporwave .text-primary { color: var(--color-text-primary); }
+        html.vaporwave .text-secondary { color: var(--color-text-secondary); }
+        html.vaporwave .text-accent { color: var(--color-accent); }
+        html.vaporwave .button-primary { 
+            background-color: var(--color-accent); 
+            color: var(--color-bg-primary);
+            text-shadow: 0 0 5px #fff;
+        }
+        html.vaporwave .button-primary:hover { background-color: var(--color-secondary); }
+        html.vaporwave .progress-bar::-webkit-slider-thumb { background-color: var(--color-accent); }
+        html.vaporwave .calendar-day.today { border-color: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
+        html.vaporwave .calendar-day:hover { border-color: var(--color-secondary); }
+        html.vaporwave .calendar-day-event { background-color: var(--color-accent); }
+        html.vaporwave .calendar-day-memory { background-color: var(--color-secondary); }
+        html.vaporwave .calendar-day-task { background-color: #f9f970; } 
+        html.vaporwave .calendar-day-birthday { background-color: #9a50e5; } 
+        html.vaporwave .calendar-day-holiday { background-color: #ef4444; } /* NUEVO: Festivo */
+        html.vaporwave .selected-item { 
+            background-color: #ff71ce30; 
+            border-left: 4px solid var(--color-accent);
+        }
+        html.vaporwave .task-checkbox {
+             color: var(--color-accent);
+        }
+        html.vaporwave .task-checkbox:focus {
+             ring: var(--color-accent);
+        }
+        html.vaporwave .search-bar {
+            background-color: rgba(31, 31, 46, 0.8);
+            border-color: var(--color-secondary);
+        }
+        html.vaporwave .search-bar:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+        /* Estilos para modo oscuro (default de Tailwind) */
+        html.dark body {
+            background-color: #111827; 
+            color: #f3f4f6; 
+        }
+        html.dark .bg-card {
+            background-color: #1f2937; 
+            border: 1px solid #374151; 
+        }
+        html.dark .text-primary { color: #f3f4f6; }
+        html.dark .text-secondary { color: #9ca3af; }
+        html.dark .text-accent { color: #3b82f6; }
+        html.dark .button-primary { background-color: #3b82f6; color: white; }
+        html.dark .button-primary:hover { background-color: #2563eb; }
+        html.dark .progress-bar::-webkit-slider-thumb { background-color: #3b82f6; }
+        html.dark .calendar-day.today { border-color: #3b82f6; }
+        html.dark .calendar-day:hover { border-color: #3b82f6; background-color: #374151; }
+        html.dark .calendar-day-event { background-color: #3b82f6; }
+        html.dark .calendar-day-memory { background-color: #10b981; }
+        html.dark .calendar-day-task { background-color: #f59e0b; } 
+        html.dark .calendar-day-birthday { background-color: #a855f7; } 
+        html.dark .calendar-day-holiday { background-color: #ef4444; } /* NUEVO: Festivo */
+        html.dark .selected-item { 
+            background-color: #3b82f630; 
+            border-left: 4px solid var(--color-accent);
+        }
+        html.dark .task-checkbox {
+             color: var(--color-accent);
+        }
+        html.dark .task-checkbox:focus {
+             ring: var(--color-accent);
+        }
+        html.dark .search-bar {
+            background-color: #374151; 
+            border-color: #4b5563; 
+        }
+        html.dark .search-bar:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+        /* Estilos para modo claro */
+        html.light body {
+            background-color: #f3f4f6; 
+            color: #111827; 
+        }
+        html.light .bg-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb; 
+        }
+        html.light .text-primary { color: #1f2937; }
+        html.light .text-secondary { color: #4b5563; }
+        html.light .text-accent { color: #3b82f6; }
+        html.light .button-primary { background-color: #3b82f6; color: white; }
+        html.light .button-primary:hover { background-color: #2563eb; }
+        html.light .progress-bar::-webkit-slider-thumb { background-color: #3b82f6; }
+        html.light .calendar-day.today { border-color: #3b82f6; }
+        html.light .calendar-day:hover { border-color: #3b82f6; background-color: #e5e7eb; }
+        html.light .calendar-day-event { background-color: #3b82f6; }
+        html.light .calendar-day-memory { background-color: #10b981; }
+        html.light .calendar-day-task { background-color: #f59e0b; } 
+        html.light .calendar-day-birthday { background-color: #a855f7; } 
+        html.light .calendar-day-holiday { background-color: #ef4444; } /* NUEVO: Festivo */
+        html.light .selected-item { 
+            background-color: #3b82f615; 
+            border-left: 4px solid var(--color-accent);
+        }
+        html.light .task-checkbox {
+             color: var(--color-accent);
+        }
+        html.light .task-checkbox:focus {
+             ring: var(--color-accent);
+        }
+        html.light .search-bar {
+            background-color: #e5e7eb; 
+            border-color: #d1d5db; 
+        }
+        html.light .search-bar:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+
+        /* Estilos generales (independientes del tema) */
+        .progress-bar {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: rgba(128, 128, 128, 0.3);
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            /* El color se define por tema */
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+        
+        /* Ocultar scrollbars pero permitir scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        /* Estilo común para los elementos de lista (playlist o track) */
+        .list-item {
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: background-color 0.2s, border-left 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .list-item:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+        
+        /* Estilos para el botón de eliminar playlist */
+        .delete-btn {
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .delete-btn:hover {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+
+        /* Clase para ocultar vistas de forma limpia */
+        .hidden-view {
+            display: none !important;
+        }
+        
+        /* --- Estilos para el FAB (Floating Action Button) --- */
+        #fab-menu {
+            /* Oculto por defecto y se escala desde la esquina */
+            transform-origin: bottom right;
+            transform: scale(0);
+            transition: transform 0.2s ease-out;
+            display: flex; /* Mantenemos flex para que esté listo */
+        }
+        #fab-container.open #fab-menu {
+            /* Visible cuando el contenedor tiene la clase 'open' */
+            transform: scale(1);
+        }
+        #fab-container.open #fab-toggle-btn svg {
+            /* Rotar el icono de paleta a 'X' */
+            transform: rotate(45deg);
+        }
+        
+        /* --- Estilos para el Visualizador --- */
+        #visualizer-panel {
+            /* Asegura que el canvas no se desborde */
+            width: 100%;
+            height: 100%;
+        }
+        #audio-canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 400px;
+            /* Fondo de la portada (difuminado) */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        /* --- Estilos para el Pomodoro --- */
+        #pomodoro-stop-btn {
+            background-color: rgba(239, 68, 68, 0.7); /* red-500 semi-transparente */
+        }
+        #pomodoro-stop-btn:hover {
+            background-color: rgba(239, 68, 68, 1); /* red-500 */
+        }
+
+        /* --- NUEVO: Estilos para Efectos de Festivos --- */
+        .snow-flake {
+            position: absolute;
+            top: -10px;
+            font-size: 20px;
+            color: white;
+            opacity: 0.7;
+            animation: snowfall 10s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes snowfall {
+            0% { transform: translateY(0) translateX(0); opacity: 0.7; }
+            100% { transform: translateY(100vh) translateX(100px); opacity: 0.1; }
+        }
+        
+        .fog-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(to top, rgba(139, 139, 139, 0.5), transparent);
+            opacity: 0;
+            animation: fog-drift 30s linear infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes fog-drift {
+            0% { transform: translateX(-20%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(20%); opacity: 0; }
+        }
+        
+        html.halloween-theme body {
+             /* Fondo animado para Halloween */
+            background: linear-gradient(-45deg, #0d0208, #1a0a1f, #e67e22, #d35400);
+            background-size: 400% 400%;
+            animation: halloween-pan 20s ease infinite;
+        }
+        @keyframes halloween-pan {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+    </style>
+</head>
+
+<body class="font-inter antialiased overflow-hidden h-screen">
+    
+    <!-- Contenedor principal de la App -->
+    <div id="app-container" class="flex flex-col h-screen transition-all duration-300">
+        
+        <!-- Área de contenido principal (Calendario y Paneles) -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-2 md:p-4 gap-4">
+
+            <!-- Panel Izquierdo: Playlists (Múltiples vistas) -->
+            <aside id="playlist-panel" class="w-full md:w-1/4 lg:w-1/5 flex flex-col gap-4 bg-card rounded-lg shadow-lg p-4 transition-all duration-300">
+                
+                <!-- (MODIFICADO) Botón de Carga de Carpeta (ahora es un <button>) -->
+                <button id="load-folder-btn" class="w-full text-center px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 button-primary font-semibold shadow-md">
+                    Cargar Playlist
+                </button>
+                <!-- Input 'hidden' de fallback para navegadores no compatibles con FSA API -->
+                <input type="file" id="file-input-fallback" webkitdirectory directory multiple accept=".mp3" class="hidden">
+
+
+                <!-- Vista 1: Colección de Playlists (Visible por defecto) -->
+                <div id="playlist-collection-view" class="flex-1 flex flex-col">
+                    <h2 class="text-xl font-bold text-primary border-b border-gray-500 pb-2 mb-2">Mis Playlists</h2>
+                    <div id="playlists-list" class="flex-1 overflow-y-auto no-scrollbar space-y-2">
+                        <!-- Las carpetas/playlists se añadirán aquí dinámicamente -->
+                        <p class="text-secondary text-sm italic text-center mt-4" id="empty-playlist-msg">Carga una carpeta de MP3 para empezar.</p>
+                    </div>
+                </div>
+
+                <!-- Vista 2: Pistas de la Playlist Seleccionada (Oculta por defecto) -->
+                <div id="track-list-view" class="flex-1 flex-col hidden-view">
+                    <!-- Botón para volver a la vista de colección -->
+                    <button id="back-to-playlists" class="flex items-center text-accent hover:text-primary mb-2 transition-colors duration-200">
+                        <!-- Icono Atrás -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        <span class="font-semibold ml-1 text-sm">Volver a Playlists</span>
+                    </button>
+                    
+                    <h2 id="current-playlist-title" class="text-xl font-bold text-primary border-b border-gray-500 pb-2 mb-2 truncate">Playlist Seleccionada</h2>
+                    
+                    <!-- Botón para añadir archivos individuales (no persistentes) -->
+                    <label class="w-full text-center px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 button-primary font-semibold shadow-md text-sm mb-2 block">
+                        + Añadir Pistas (Archivos)
+                        <input type="file" id="add-tracks-input" multiple accept=".mp3" class="hidden">
+                    </label>
+
+                    <!-- Barra de Búsqueda -->
+                    <div class="relative mb-2">
+                        <input type="search" id="track-search-input" placeholder="Buscar en playlist..." class="search-bar w-full p-2 pl-8 rounded-lg text-primary border-2 outline-none transition-all duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-2.5 top-2.5 text-secondary"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+
+
+                    <div id="tracks-in-playlist-list" class="flex-1 overflow-y-auto no-scrollbar space-y-2">
+                        <!-- Las pistas se añadirán aquí dinámicamente -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Panel Central: Calendario -->
+            <section id="calendar-panel" class="flex-1 flex flex-col bg-card rounded-lg shadow-lg p-4 transition-all duration-300 overflow-hidden">
+                <!-- Cabecera del Calendario -->
+                <div class="flex justify-between items-center mb-4">
+                    <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-primary" aria-label="Mes anterior">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <h2 id="month-year-header" class="text-2xl font-bold text-primary">Noviembre 2025</h2>
+                    <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-primary" aria-label="Mes siguiente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+
+                <!-- Días de la semana -->
+                <div class="grid grid-cols-7 gap-4 mb-2">
+                    <div class="text-center font-semibold text-secondary text-sm">DOM</div>
+                    <div class="text-center font-semibold text-secondary text-sm">LUN</div>
+                    <div class="text-center font-semibold text-secondary text-sm">MAR</div>
+                    <div class="text-center font-semibold text-secondary text-sm">MIÉ</div>
+                    <div class="text-center font-semibold text-secondary text-sm">JUE</div>
+                    <div class="text-center font-semibold text-secondary text-sm">VIE</div>
+                    <div class="text-center font-semibold text-secondary text-sm">SÁB</div>
+                </div>
+
+                <!-- Rejilla del Calendario -->
+                <div id="calendar-grid" class="calendar-grid flex-1 overflow-y-auto no-scrollbar">
+                    <!-- Los días se generarán aquí -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Panel del Visualizador (Oculto por defecto) -->
+        <div id="visualizer-panel" class="flex-1 flex-col bg-card overflow-hidden hidden">
+            <!-- Cabecera con botón de cerrar -->
+            <div class="flex-shrink-0 flex justify-between items-center p-4 border-b border-gray-500/50">
+                <h2 class="text-xl font-bold text-primary">Visualizador</h2>
+                <button id="close-visualizer-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-primary" aria-label="Cerrar visualizador">
+                    <!-- Icono de 'X' -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <!-- Contenedor del Canvas -->
+            <div class="flex-1 p-4 flex items-center justify-center">
+                <canvas id="audio-canvas"></canvas>
+            </div>
+        </div>
+
+
+        <!-- Barra del Reproductor (Footer) -->
+        <footer id="player-bar" class="w-full bg-card shadow-lg p-4 transition-all duration-300 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                
+                <!-- Info de la canción (AHORA ES CLICABLE) -->
+                <div id="track-info-clickable" class="w-1/4 cursor-pointer hover:opacity-80 transition-opacity">
+                    <h3 id="current-track-title" class="text-lg font-bold text-primary truncate">...</h3>
+                    <p id="current-track-artist" class="text-sm text-secondary truncate">Selecciona una canción</p>
+                </div>
+
+                <!-- Controles Principales -->
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <!-- Botones -->
+                    <div class="flex items-center gap-4">
+                        <button id="shuffle-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-secondary" aria-label="Aleatorio">
+                            <!-- Icono Shuffle -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="11" y2="11"></line></svg>
+                        </button>
+                        <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-primary" aria-label="Anterior">
+                            <!-- Icono Prev -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
+                        </button>
+                        <button id="play-pause-btn" class="p-3 rounded-full button-primary transition-all duration-200 shadow-lg" aria-label="Reproducir">
+                            <!-- Icono Play (se cambiará a Pause) -->
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                        </button>
+                        <button id="next-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-primary" aria-label="Siguiente">
+                            <!-- Icono Next -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+                        </button>
+                        <button id="repeat-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-secondary" aria-label="Repetir">
+                            <!-- Icono Repeat -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        </button>
+                    </div>
+                    <!-- Barra de progreso -->
+                    <div class="w-full flex items-center gap-2">
+                        <span id="current-time" class="text-xs text-secondary w-10 text-center">0:00</span>
+                        <input type="range" id="progress-bar" value="0" min="0" max="100" step="0.1" class="progress-bar flex-1">
+                        <span id="total-time" class="text-xs text-secondary w-10 text-center">0:00</span>
+                    </div>
+                </div>
+
+                <!-- Controles de Volumen (MODIFICADO para incluir Pomodoro) -->
+                <div class="w-1/4 flex items-center justify-end gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    <input type="range" id="volume-slider" value="1" min="0" max="1" step="0.01" class="progress-bar w-2/3">
+                    
+                    <!-- Botón Pomodoro -->
+                    <button id="pomodoro-btn" class="p-2 rounded-full hover:bg-gray-500/20 transition-all duration-200 text-secondary" aria-label="Iniciar Pomodoro">
+                        <!-- Icono Timer -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </button>
+
+                    <!-- Display Pomodoro (oculto) -->
+                    <div id="pomodoro-display" class="hidden items-center gap-2 text-primary font-semibold">
+                        <span id="pomodoro-time-left" class="text-lg">25:00</span>
+                        <button id="pomodoro-stop-btn" class="p-1.5 rounded-full transition-all duration-200 text-white" aria-label="Detener Pomodoro">
+                            <!-- Icono Stop -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0"><rect x="4" y="4" width="16" height="16"></rect></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- NUEVO: Contenedor de Efectos de Festivos -->
+        <div id="holiday-overlay" class="fixed inset-0 pointer-events-none z-30 overflow-hidden">
+            <!-- Los efectos (nieve, niebla) se inyectarán aquí -->
+        </div>
+
+        <!-- FAB (Floating Action Button) para Temas -->
+        <div id="fab-container" class="fixed bottom-24 right-6 z-40">
+            
+            <!-- Menú (oculto por defecto) -->
+            <div id="fab-menu" class="absolute bottom-full right-0 mb-3 flex-col gap-2 p-2 bg-card rounded-lg shadow-xl w-36">
+                <!-- Los botones de tema ahora están aquí -->
+                <button data-theme="light" class="theme-btn w-full px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md bg-gray-200 text-gray-800 hover:bg-gray-300">
+                    Claro
+                </button>
+                <button data-theme="dark" class="theme-btn w-full px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md bg-gray-700 text-white hover:bg-gray-600">
+                    Oscuro
+                </button>
+                <button data-theme="vaporwave" class="theme-btn w-full px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md bg-pink-500 text-black hover:bg-cyan-400">
+                    Vaporwave
+                </button>
+            </div>
+            
+            <!-- Botón principal del FAB -->
+            <button id="fab-toggle-btn" class="w-16 h-16 rounded-full button-primary shadow-lg flex items-center justify-center transition-transform duration-200 hover:scale-105" aria-label="Cambiar tema">
+                <!-- Icono de Paleta -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200">
+                    <path d="M12 2.69l.1-.01.04 0c.03-.01.07-.02.1-.03s.07-.01.1-.02.07 0 .1-.01.07 0 .1 0c.03 0 .07 0 .1 0s.07.01.1.01.07.01.1.02.07.01.1.03.07.02.1.03c.03.01.07.02.1.04l.03.02c.03.02.06.03.09.05.03.02.06.04.08.06.03.02.06.05.08.07.03.02.05.05.07.08.02.03.04.06.06.08.02.03.03.06.05.09l.02.03c.01.03.02.07.03.1.01.03.02.07.02.1.01.03.01.07.01.1s0 .07 0 .1-.01.07-.01.1-.02.07-.02.1-.03.07-.03.1l-.02.03c-.01.03-.03.06-.05.09-.02.03-.04.06-.06.08-.02.03-.05.06-.07.08-.02.03-.05.05-.08.07-.02.03-.06.06-.08.08-.03.02-.06.04-.09.06l-.03.02c-.03.01-.07.03-.1.04-.03.01-.07.02-.1.03s-.07.01-.1.02-.07.01-.1.01-.07 0-.1 0-.07 0-.1 0-.07-.01-.1-.01-.07-.01-.1-.02-.07-.01-.1-.03-.07-.02-.1-.03c-.03-.01-.07-.02-.1-.04l-.03-.02c-.03-.02-.06-.03-.09-.05-.03-.02-.06-.04-.08-.06-.03-.02-.06-.05-.08-.07-.03-.02-.05-.05-.07-.08-.02-.03-.04-.06-.06-.08-.02.03-.03.06-.05-.09l-.02-.03c-.01-.03-.02-.07-.03-.1-.01-.03-.02-.07-.02-.1-.01-.03-.01-.07-.01-.1s0-.07 0-.1.01-.07.01-.1.02-.07.02-.1.03-.07.03-.1l.02-.03c.01-.03.03-.06.05-.09.02-.03.04-.06.06-.08.02-.03.05-.06.07.08.02-.03.05-.05.08-.07.02-.03.06-.06.08-.08.03-.02.06-.04.09-.06l.03-.02c.03-.01.07-.03.1-.04.03-.01.07-.02.1-.03z"/>
+                    <path d="M20.7 14c.3-.5.3-1.1 0-1.6l-4-7c-.3-.5-1-.8-1.7-.8H9c-.7 0-1.4.3-1.7.8l-4 7c-.3.5-.3 1.1 0 1.6l.3.6c.3.5.9.8 1.4.8h12c.5 0 1.1-.3 1.4-.8l.3-.6z"/>
+                    <path d="M12 10.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                    <path d="M15.5 10.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                    <path d="M8.5 10.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+    
+    <!-- Modal para Eventos -->
+    <div id="event-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-card rounded-lg shadow-2xl p-6 w-full max-w-md max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-xl font-bold text-primary">Detalles del Día</h2>
+                <button id="modal-close-btn" class="p-1 rounded-full text-secondary hover:text-primary hover:bg-gray-500/20" aria-label="Cerrar modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <h3 id="modal-date-header" class="text-lg font-semibold text-accent mb-2 flex-shrink-0">3 de Noviembre, 2025</h3>
+
+            <!-- Contenedor scrollable para listas y formulario -->
+            <div class="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
+
+                <!-- Recuerdos del día -->
+                <div class="mb-4">
+                    <h4 class="font-bold text-primary mb-2">Recuerdos del Día</h4>
+                    <div id="modal-memories-list" class="text-sm text-secondary space-y-1 max-h-24 overflow-y-auto no-scrollbar">
+                        <!-- Los recuerdos se añaden aquí -->
+                        <p class="italic">No hay recuerdos para este día.</p>
+                    </div>
+                </div>
+                
+                <!-- NUEVO: Días Festivos -->
+                <div class="mb-4 hidden" id="modal-holidays-container">
+                    <h4 class="font-bold text-primary mb-2">Festivos</h4>
+                    <div id="modal-holidays-list" class="text-sm space-y-2">
+                        <!-- Los festivos se añadirán aquí -->
+                    </div>
+                </div>
+
+                <!-- Eventos y Tareas del día -->
+                <div class="mb-4">
+                    <h4 class="font-bold text-primary mb-2">Eventos y Tareas</h4>
+                    <div id="modal-events-list" class="text-sm space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                        <!-- Los eventos y tareas se añaden aquí dinámicamente -->
+                        <p class="italic text-secondary">No hay eventos ni tareas.</p>
+                    </div>
+                </div>
+
+                <!-- Formulario para añadir evento/tarea -->
+                <form id="event-form" class="space-y-2">
+                    <h4 class="font-bold text-primary mb-2">Añadir Nuevo</h4>
+                    <input type="hidden" id="event-date-input">
+                    
+                    <div>
+                        <label for="event-type-select" class="text-sm text-secondary">Tipo:</label>
+                        <select id="event-type-select" required class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50">
+                            <option value="event">Evento</option>
+                            <option value="task">Tarea</option>
+                            <option value="birthday">Cumpleaños</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="event-description-input" class="text-sm text-secondary">Descripción:</label>
+                        <input type="text" id="event-description-input" required class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50" placeholder="Nombre del evento o tarea...">
+                    </div>
+                    
+                    <!-- CAMPO DE IMAGEN MODIFICADO -->
+                    <div>
+                        <label for="event-image-url" class="text-sm text-secondary">Imagen (opcional, URL):</label>
+                        <input type="url" id="event-image-url" class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50" placeholder="https://ejemplo.com/imagen.png">
+                    </div>
+                    <!-- NUEVO: Campo de Imagen Local -->
+                    <div>
+                        <label for="event-image-local" class="text-sm text-secondary">o sube una imagen local (máx 5MB):</label>
+                        <input type="file" id="event-image-local" class="w-full text-sm text-secondary file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-500/30 file:text-accent hover:file:bg-gray-500/50 cursor-pointer" accept="image/*">
+                    </div>
+                    
+                    <div class="flex items-center gap-2 pt-2"> <!-- Añadido pt-2 para separar -->
+                        <input type="checkbox" id="event-allday-checkbox" class="task-checkbox h-4 w-4 rounded bg-gray-500/20 focus:ring-opacity-50 border-gray-500/50">
+                        <label for="event-allday-checkbox" class="text-sm text-secondary">Todo el día</label>
+                    </div>
+                    
+                    <!-- Contenedor para Repetir Anualmente -->
+                    <div id="event-repeat-container" class="flex items-center gap-2">
+                        <input type="checkbox" id="event-repeat-checkbox" class="task-checkbox h-4 w-4 rounded bg-gray-500/20 focus:ring-opacity-50 border-gray-500/50">
+                        <label for="event-repeat-checkbox" class="text-sm text-secondary">Repetir anualmente</label>
+                    </div>
+                    
+                    <div id="event-time-container">
+                        <label for="event-time-input" class="text-sm text-secondary">Hora:</label>
+                        <input type="time" id="event-time-input" class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50">
+                    </div>
+                    
+                    <!-- Opciones de música opcionales -->
+                    <details class="pt-2" id="event-music-container">
+                        <summary class="text-sm text-secondary cursor-pointer hover:text-primary">Opciones de música (Opcional)</summary>
+                        <div class="pt-2 space-y-2">
+                            <div>
+                                <label for="event-playlist-select" class="text-sm text-secondary">Playlist:</label>
+                                <select id="event-playlist-select" class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50">
+                                    <option value="">-- Selecciona una playlist --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="event-song-select" class="text-sm text-secondary">Canción:</label>
+                                <select id="event-song-select" class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50">
+                                    <option value="">-- Selecciona una canción --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <button type="submit" class="w-full px-4 py-2 rounded-lg button-primary font-semibold shadow-md !mt-4">
+                        Guardar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Modal for Confirmation/Alert -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-card rounded-lg shadow-2xl p-6 w-full max-w-sm">
+            <h3 id="custom-modal-title" class="text-xl font-bold text-primary mb-2"></h3>
+            <p id="custom-modal-text" class="text-secondary mb-4"></p>
+            <div id="custom-modal-actions" class="flex justify-end space-x-3">
+                <!-- Botones se inyectarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Pomodoro -->
+    <div id="pomodoro-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-card rounded-lg shadow-2xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-bold text-primary mb-4">Temporizador Pomodoro</h3>
+            
+            <div class="mb-4">
+                <label for="pomodoro-playlist-select" class="text-sm text-secondary">Playlist de Focus (Opcional):</label>
+                <select id="pomodoro-playlist-select" class="w-full p-2 rounded bg-gray-500/20 text-primary border border-gray-500/50">
+                    <option value="">-- Sin música --</option>
+                    <!-- Opciones de playlist se inyectarán aquí -->
+                </select>
+            </div>
+
+            <p class="text-sm text-secondary mb-2">Duración:</p>
+            <div class="flex gap-2 mb-4">
+                 <button data-minutes="15" class="pomodoro-duration-btn flex-1 px-4 py-2 rounded-lg bg-gray-500/20 text-primary hover:bg-gray-500/30 font-semibold">15 min</button>
+                 <button data-minutes="25" class="pomodoro-duration-btn flex-1 px-4 py-2 rounded-lg bg-gray-500/20 text-primary hover:bg-gray-500/30 font-semibold button-primary">25 min</button>
+                 <button data-minutes="45" class="pomodoro-duration-btn flex-1 px-4 py-2 rounded-lg bg-gray-500/20 text-primary hover:bg-gray-500/30 font-semibold">45 min</button>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                 <button id="pomodoro-cancel-btn" class="px-4 py-2 rounded-lg bg-gray-500/20 text-primary hover:bg-gray-500/30 font-semibold">Cancelar</button>
+                 <button id="pomodoro-start-btn" class="px-4 py-2 rounded-lg button-primary font-semibold shadow-md">Iniciar 25 min</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elemento de Audio -->
+    <audio id="audio-player"></audio>
+
+    <script type="module">
+        // --- Configuración de Firebase (boilerplate requerido) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // setLogLevel('Debug'); // Desactivar si no es necesario
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = 'anon'; // Default user ID
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Intentar iniciar sesión con el token personalizado, si no, anónimamente
+            const authenticate = async () => {
+                try {
+                    if (initialAuthToken) {
+                        const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                        userId = userCredential.user.uid;
+                    } else {
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                    }
+                } catch (error) {
+                    console.error("Firebase: Error al autenticar.", error);
+                    // Fallback to anonymous or use a random ID if auth fails
+                    userId = auth.currentUser?.uid || crypto.randomUUID();
+                }
+                console.log("Firebase: Usuario ID:", userId);
+            };
+            authenticate();
+            
+        } catch (error) {
+            console.error("Firebase: Error al inicializar.", error);
+        }
+
+        // --- Selectores del DOM (MODIFICADOS) ---
+        const audioPlayer = document.getElementById('audio-player');
+        // const fileInput = document.getElementById('file-input'); // Obsoleto
+        const loadFolderBtn = document.getElementById('load-folder-btn'); // NUEVO
+        const fileInputFallback = document.getElementById('file-input-fallback'); // NUEVO
+        
+        // Vistas de Playlist
+        const collectionListEl = document.getElementById('playlists-list');
+        const trackListEl = document.getElementById('tracks-in-playlist-list');
+        const collectionContainer = document.getElementById('playlist-collection-view');
+        const tracksContainer = document.getElementById('track-list-view');
+        const backToPlaylistsBtn = document.getElementById('back-to-playlists');
+        const currentPlaylistTitleEl = document.getElementById('current-playlist-title');
+        const emptyPlaylistMsg = document.getElementById('empty-playlist-msg');
+        const addTracksInput = document.getElementById('add-tracks-input'); 
+        const trackSearchInput = document.getElementById('track-search-input'); 
+        
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const totalTimeEl = document.getElementById('total-time');
+        const volumeSlider = document.getElementById('volume-slider');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
+        const currentTrackTitle = document.getElementById('current-track-title');
+        const currentTrackArtist = document.getElementById('current-track-artist');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearHeader = document.getElementById('month-year-header');
+        const prevMonthBtn = document.getElementById('prev-month-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+        const fabContainer = document.getElementById('fab-container');
+        const fabToggleBtn = document.getElementById('fab-toggle-btn');
+        const fabMenu = document.getElementById('fab-menu');
+        const eventModal = document.getElementById('event-modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalDateHeader = document.getElementById('modal-date-header');
+        const modalMemoriesList = document.getElementById('modal-memories-list');
+        const modalHolidaysContainer = document.getElementById('modal-holidays-container'); // NUEVO
+        const modalHolidaysList = document.getElementById('modal-holidays-list'); // NUEVO
+        const modalEventsList = document.getElementById('modal-events-list'); 
+        const eventForm = document.getElementById('event-form');
+        const eventDateInput = document.getElementById('event-date-input');
+        const eventTypeSelect = document.getElementById('event-type-select');
+        const eventDescriptionInput = document.getElementById('event-description-input');
+        const eventImageUrlInput = document.getElementById('event-image-url'); // MODIFICADO
+        const eventImageLocalInput = document.getElementById('event-image-local'); // NUEVO
+        const eventAllDayCheckbox = document.getElementById('event-allday-checkbox');
+        const eventTimeContainer = document.getElementById('event-time-container');
+        const eventTimeInput = document.getElementById('event-time-input');
+        const eventRepeatContainer = document.getElementById('event-repeat-container');
+        const eventRepeatCheckbox = document.getElementById('event-repeat-checkbox');
+        const eventMusicContainer = document.getElementById('event-music-container');
+        const eventPlaylistSelect = document.getElementById('event-playlist-select');
+        const eventSongSelect = document.getElementById('event-song-select');
+        const customModal = document.getElementById('custom-modal');
+        const customModalTitle = document.getElementById('custom-modal-title');
+        const customModalText = document.getElementById('custom-modal-text');
+        const customModalActions = document.getElementById('custom-modal-actions');
+        
+        // Visualizador
+        const mainContent = document.querySelector('main');
+        const visualizerPanel = document.getElementById('visualizer-panel');
+        const trackInfoClickable = document.getElementById('track-info-clickable');
+        const closeVisualizerBtn = document.getElementById('close-visualizer-btn');
+        const audioCanvas = document.getElementById('audio-canvas');
+        
+        // Pomodoro
+        const pomodoroBtn = document.getElementById('pomodoro-btn');
+        const pomodoroModal = document.getElementById('pomodoro-modal');
+        const pomodoroCancelBtn = document.getElementById('pomodoro-cancel-btn');
+        const pomodoroStartBtn = document.getElementById('pomodoro-start-btn');
+        const pomodoroPlaylistSelect = document.getElementById('pomodoro-playlist-select');
+        const pomodoroDurationButtons = document.querySelectorAll('.pomodoro-duration-btn');
+        const pomodoroDisplay = document.getElementById('pomodoro-display');
+        const pomodoroTimeLeft = document.getElementById('pomodoro-time-left');
+        const pomodoroStopBtn = document.getElementById('pomodoro-stop-btn');
+        
+        // Festivos
+        const holidayOverlay = document.getElementById('holiday-overlay'); // NUEVO
+
+
+        // --- Estado de la Aplicación ---
+        let allPlaylists = [];  
+        let activePlaylistId = null; 
+        let currentTrackIndex = -1; 
+        let isPlaying = false;
+        let isShuffle = false;
+        let repeatMode = 'none'; // 'none', 'one', 'all'
+        let currentDate = new Date();
+        let events = {}; // { 'YYYY-MM-DD': [{...}] }
+        let recurringEvents = {}; // { 'MM-DD': [{...}] }
+        let memories = {}; // { 'MM-DD': [{...}] }
+        let holidays = {}; // { 'MM-DD': { name, effect } } // NUEVO
+        
+        // Web Audio API
+        let audioContext;
+        let analyser;
+        let sourceNode;
+        let dataArray;
+        let rafId; // requestAnimationFrame ID
+        
+        // Pomodoro
+        let pomodoroInterval;
+        let pomodoroEndTime;
+        let pomodoroOriginalPlaylist = { id: null, trackIndex: -1 };
+        let pomodoroDuration = 25; 
+
+        // NUEVO: Estado de Persistencia
+        let persistenceDB = null;
+        const DB_NAME = 'musicAppDB';
+        const DB_VERSION = 2; // MODIFICADO: Versión incrementada para añadir imageStore
+        const STORE_NAME = 'folderHandles';
+        const IMAGE_STORE_NAME = 'imageStore'; // NUEVO
+
+
+        // --- Utilidades ---
+        function generateId() {
+            return crypto.randomUUID();
+        }
+
+        function getActivePlaylist() {
+            return allPlaylists.find(p => p.id === activePlaylistId);
+        }
+
+        /**
+         * Abre la conexión con IndexedDB.
+         */
+        async function openPersistenceDB() {
+            return new Promise((resolve, reject) => {
+                // Si ya está abierta, la retornamos.
+                if (persistenceDB) {
+                    resolve(persistenceDB);
+                    return;
+                }
+                
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                    // NUEVO: Crear el objectStore para imágenes
+                    if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+                        db.createObjectStore(IMAGE_STORE_NAME); // Usamos el ID como clave
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    persistenceDB = event.target.result;
+                    resolve(persistenceDB);
+                };
+
+                request.onerror = (event) => {
+                    console.error("Error al abrir IndexedDB:", event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        /**
+         * Funciones CRUD para Imágenes en IndexedDB (NUEVAS)
+         */
+        
+        /**
+         * Guarda una imagen (Blob o File) en IndexedDB.
+         * @param {string} id - ID único generado para la imagen.
+         * @param {Blob | File} imageBlob - El archivo de imagen.
+         */
+        async function saveImage(id, imageBlob) {
+            try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(IMAGE_STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(IMAGE_STORE_NAME);
+                    const request = store.put(imageBlob, id); // Guardar blob/file usando el ID como clave
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al guardar imagen en IDB:", error);
+            }
+        }
+        
+        /**
+         * Recupera una imagen de IndexedDB por su ID.
+         * @param {string} id - ID de la imagen.
+         * @returns {Promise<Blob | File>} - El blob/file de la imagen.
+         */
+        async function getImage(id) {
+            try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(IMAGE_STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(IMAGE_STORE_NAME);
+                    const request = store.get(id); // Obtener por ID
+                    request.onsuccess = () => resolve(request.result); // Retorna el blob/file
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al leer imagen de IDB:", error);
+                return undefined;
+            }
+        }
+        
+        /**
+         * Elimina una imagen de IndexedDB por su ID.
+         */
+        async function deleteImage(id) {
+            try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(IMAGE_STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(IMAGE_STORE_NAME);
+                    const request = store.delete(id); // Eliminar por ID
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al eliminar imagen de IDB:", error);
+            }
+        }
+
+
+        /**
+         * Funciones CRUD para Folder Handles (Persistencia)
+         * (CORREGIDAS para usar Promises correctamente)
+         */
+        async function saveFolderHandle(id, name, handle) {
+            try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.put({ id, name, handle });
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al guardar FolderHandle en IDB:", error);
+            }
+        }
+
+        async function getFolderHandle(id) {
+            try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result ? request.result.handle : undefined);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al leer FolderHandle de IDB:", error);
+                return undefined;
+            }
+        }
+        
+        async function getAllFolderHandles() {
+             try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al leer todos los FolderHandles de IDB:", error);
+                return [];
+            }
+        }
+
+        async function deleteFolderHandle(id) {
+             try {
+                const db = await openPersistenceDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            } catch (error) {
+                console.error("Error al eliminar FolderHandle de IDB:", error);
+            }
+        }
+        
+
+        // --- Funciones de Inicialización ---
+        
+        async function initApp() {
+            await openPersistenceDB(); // Asegurarse de que IDB esté lista
+            loadFromLocalStorage(); 
+            await loadHolidayData(); // Cargar festivos
+            renderCalendar();
+            setupEventListeners();
+            updateTheme(localStorage.getItem('musicTheme') || 'dark');
+            await loadPersistedPlaylists(); // NUEVO: Cargar playlists desde IDB
+            // renderPlaylistsCollection(); // Se llama dentro de loadPersistedPlaylists
+            updatePlayerDisplay(false);
+            initAudioContext();
+            checkHolidayEffect(); // NUEVO: Comprobar si hoy es festivo
+        }
+
+        // --- Event Listeners ---
+        
+        function setupEventListeners() {
+            // fileInput.addEventListener('change', handleFileSelect); // Obsoleto
+            loadFolderBtn.addEventListener('click', handleLoadFolderClick); // NUEVO
+            fileInputFallback.addEventListener('change', (e) => handleFileSelect(e.target.files, true)); // NUEVO
+            addTracksInput.addEventListener('change', (e) => handleAddIndividualTracks(e.target.files));
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            audioPlayer.addEventListener('timeupdate', updateProgress);
+            audioPlayer.addEventListener('loadedmetadata', updateTime);
+            audioPlayer.addEventListener('ended', handleTrackEnd);
+            progressBar.addEventListener('input', handleSeek);
+            volumeSlider.addEventListener('input', handleVolume);
+            prevBtn.addEventListener('click', playPrevTrack);
+            nextBtn.addEventListener('click', playNextTrack);
+            shuffleBtn.addEventListener('click', toggleShuffle);
+            repeatBtn.addEventListener('click', toggleRepeat);
+
+            prevMonthBtn.addEventListener('click', showPrevMonth);
+            nextMonthBtn.addEventListener('click', showNextMonth);
+            calendarGrid.addEventListener('click', handleDayClick);
+
+            fabToggleBtn.addEventListener('click', toggleFabMenu);
+            fabMenu.addEventListener('click', handleThemeChange);
+            
+            backToPlaylistsBtn.addEventListener('click', showPlaylistCollection);
+            trackSearchInput.addEventListener('input', handleTrackSearch);
+            
+            // Event delegation para hacer clic en una Playlist de la colección O en el botón de eliminar
+            collectionListEl.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-playlist-btn')) {
+                    handleDeletePlaylist(e);
+                } else if (e.target.closest('.reload-playlist-btn')) { // NUEVO: Recargar
+                    handleReloadPlaylist(e);
+                } else {
+                    handlePlaylistSelection(e);
+                }
+            });
+            // Event delegation para hacer clic en una Pista de la lista
+            trackListEl.addEventListener('click', handleTrackSelection);
+
+            // Modal
+            modalCloseBtn.addEventListener('click', () => eventModal.classList.add('hidden'));
+            eventPlaylistSelect.addEventListener('change', updateSongSelectOptions);
+            eventForm.addEventListener('submit', handleEventFormSubmit);
+            eventTypeSelect.addEventListener('change', updateModalFormOptions);
+            eventAllDayCheckbox.addEventListener('change', updateModalFormOptions);
+            
+            // NUEVO: Listeners del modal para acciones de items (completar, eliminar)
+            modalEventsList.addEventListener('click', (e) => {
+                if (e.target.closest('.task-check-item')) {
+                    handleToggleTask(e.target.closest('.task-check-item'));
+                }
+                if (e.target.closest('.delete-item-btn')) {
+                    handleDeleteItem(e.target.closest('.delete-item-btn'));
+                }
+            });
+
+            // Visualizador
+            trackInfoClickable.addEventListener('click', showVisualizer);
+            closeVisualizerBtn.addEventListener('click', hideVisualizer);
+            
+            // Pomodoro
+            pomodoroBtn.addEventListener('click', showPomodoroModal);
+            pomodoroCancelBtn.addEventListener('click', hidePomodoroModal);
+            pomodoroStartBtn.addEventListener('click', startPomodoro);
+            pomodoroStopBtn.addEventListener('click', stopPomodoro);
+            pomodoroDurationButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    pomodoroDurationButtons.forEach(b => b.classList.remove('button-primary'));
+                    btn.classList.add('button-primary');
+                    pomodoroDuration = parseInt(btn.dataset.minutes);
+                    pomodoroStartBtn.textContent = `Iniciar ${pomodoroDuration} min`;
+                });
+            });
+        }
+
+        // --- Lógica de Vistas del Panel Izquierdo ---
+        
+        function showPlaylistCollection() {
+            tracksContainer.classList.add('hidden-view');
+            collectionContainer.classList.remove('hidden-view');
+            trackSearchInput.value = ''; // Limpiar búsqueda
+        }
+
+        function showTrackList(playlistId) {
+            const playlist = allPlaylists.find(p => p.id === playlistId);
+            if (!playlist) return;
+
+            activePlaylistId = playlistId;
+            currentPlaylistTitleEl.textContent = playlist.name;
+            
+            collectionContainer.classList.add('hidden-view');
+            tracksContainer.classList.remove('hidden-view');
+            
+            renderTrackList();
+        }
+        
+        function handlePlaylistSelection(e) {
+            const playlistEl = e.target.closest('.list-item');
+            if (!playlistEl || !playlistEl.dataset.id) return;
+            
+            const playlistId = playlistEl.dataset.id;
+            const playlist = allPlaylists.find(p => p.id === playlistId);
+            
+            if (playlist && playlist.tracks.length > 0) {
+                 showTrackList(playlistId);
+            } else if (playlist && playlist.isPersistent) {
+                // Si está persistida pero no cargada, mostramos un mensaje
+                alertUser(`Playlist "${playlist.name}" no está cargada. Haz clic en el icono de recargar.`);
+            } else {
+                // Si no está persistida y no tiene tracks (ej. error de carga inicial),
+                // permitimos entrar para que pueda añadir tracks manualmente.
+                showTrackList(playlistId);
+            }
+        }
+        
+        function handleTrackSelection(e) {
+            const trackEl = e.target.closest('.list-item');
+            if (!trackEl || trackEl.dataset.index === undefined) return;
+            
+            // IMPORTANTE: El data-index ahora es el 'originalIndex' guardado en el track
+            const originalIndex = parseInt(trackEl.dataset.index);
+            const playlist = getActivePlaylist();
+            if (!playlist) return;
+            
+            // Encontrar el índice *actual* en el array `tracks` (que puede estar filtrado)
+            const track = playlist.tracks.find(t => t.originalIndex === originalIndex);
+            // Pero para el reproductor, usamos el índice global de la playlist *completa*
+            const trackIndexInFullPlaylist = playlist.tracks.indexOf(track);
+
+            if (trackIndexInFullPlaylist === -1) return;
+            
+            loadTrack(trackIndexInFullPlaylist);
+            playAudio();
+        }
+        
+        /**
+         * Maneja el clic en el botón de eliminar playlist.
+         * MODIFICADO para incluir lógica de IndexedDB.
+         */
+        async function handleDeletePlaylist(e) {
+            const deleteBtn = e.target.closest('.delete-playlist-btn');
+            const playlistId = deleteBtn.dataset.id;
+            const playlist = allPlaylists.find(p => p.id === playlistId);
+
+            if (!playlist) return;
+
+            // Mostrar modal de confirmación
+            showConfirmationModal(
+                'Confirmar Eliminación',
+                `¿Estás seguro de que quieres eliminar la playlist "${playlist.name}"? Esto también eliminará la carpeta "recordada" (si existe).`,
+                async () => { // Acción al confirmar (convertida a async)
+                    // 1. Eliminar de IndexedDB si es persistente
+                    if (playlist.isPersistent) {
+                        await deleteFolderHandle(playlist.id);
+                    }
+                    
+                    // 2. Eliminar la playlist de la lista global
+                    allPlaylists = allPlaylists.filter(p => p.id !== playlistId);
+
+                    // 3. Limpiar referencias si era la playlist activa
+                    if (activePlaylistId === playlistId) {
+                        activePlaylistId = null;
+                        currentTrackIndex = -1;
+                        pauseAudio();
+                        audioPlayer.src = '';
+                        updatePlayerDisplay(false);
+                        showPlaylistCollection(); // Volver a la vista de colección
+                    }
+                    
+                    // 4. Limpiar eventos y recuerdos (MODIFICADO para buscar en recurringEvents)
+                    Object.keys(events).forEach(date => {
+                        events[date] = events[date].filter(event => event.playlistId !== playlistId);
+                        if (events[date].length === 0) delete events[date];
+                    });
+                    
+                    Object.keys(recurringEvents).forEach(date => {
+                        recurringEvents[date] = recurringEvents[date].filter(event => event.playlistId !== playlistId);
+                        if (recurringEvents[date].length === 0) delete recurringEvents[date];
+                    });
+                    
+                    Object.keys(memories).forEach(date => {
+                        memories[date] = memories[date].filter(memory => memory.playlistId !== playlistId);
+                        if (memories[date].length === 0) delete memories[date];
+                    });
+
+                    // 5. Actualizar UI y guardar cambios
+                    hideCustomModal();
+                    saveToLocalStorage();
+                    renderPlaylistsCollection();
+                    renderCalendar(); 
+                    updateEventModalPlaylistOptions(); // Actualizar el modal
+                    alertUser(`Playlist "${playlist.name}" eliminada correctamente.`);
+                }, 
+                () => hideCustomModal() // Acción al cancelar
+            );
+        }
+        
+        /**
+         * NUEVO: Maneja el clic en el botón de recargar playlist persistente.
+         */
+        async function handleReloadPlaylist(e) {
+            const reloadBtn = e.target.closest('.reload-playlist-btn');
+            const playlistId = reloadBtn.dataset.id;
+            const playlist = allPlaylists.find(p => p.id === playlistId);
+
+            if (!playlist || !playlist.isPersistent) return;
+            
+            alertUser(`Recargando "${playlist.name}"...`, 'info', 3000);
+
+            try {
+                const handle = await getFolderHandle(playlistId);
+                if (!handle) {
+                    throw new Error("No se encontró el handle en IndexedDB.");
+                }
+                
+                // Pedir permiso (puede ser necesario si la sesión expiró)
+                if (await handle.queryPermission({ mode: 'read' }) !== 'granted') {
+                    if (await handle.requestPermission({ mode: 'read' }) !== 'granted') {
+                        alertUser("Permiso denegado para acceder a la carpeta.");
+                        return;
+                    }
+                }
+                
+                // Cargar los archivos desde el handle
+                const mp3Files = await loadFilesFromHandle(handle);
+                
+                // Procesar los archivos
+                await processAndAddPlaylist(mp3Files, playlist.name, playlistId, handle);
+                
+                // Abrir la playlist recién cargada
+                showTrackList(playlistId);
+                if (playlist.tracks.length > 0) {
+                    loadTrack(0);
+                    playAudio();
+                }
+
+            } catch (error) {
+                console.error("Error al recargar la playlist:", error);
+                alertUser(`Error al recargar "${playlist.name}": ${error.message}`);
+                // Si falla (ej. carpeta eliminada), borramos la referencia
+                await deleteFolderHandle(playlistId);
+                playlist.isPersistent = false;
+                renderPlaylistsCollection();
+            }
+        }
+
+
+        // --- Lógica de Carga de Playlists/Carpetas (REESTRUCTURADA) ---
+
+        /**
+         * NUEVO: Decide qué método de carga usar (FSA API o Fallback).
+         */
+        async function handleLoadFolderClick() {
+            // 1. Intentar con la API moderna (File System Access)
+            if ('showDirectoryPicker' in window) {
+                try {
+                    const handle = await window.showDirectoryPicker();
+                    const playlistId = generateId();
+                    const playlistName = handle.name;
+                    
+                    alertUser(`Cargando carpeta "${playlistName}"...`, 'info', 3000);
+                    
+                    const mp3Files = await loadFilesFromHandle(handle);
+                    
+                    // Procesar y guardar en IDB
+                    await processAndAddPlaylist(mp3Files, playlistName, playlistId, handle);
+
+                    // Abrir la nueva playlist
+                    showTrackList(playlistId);
+                    const newPlaylist = allPlaylists.find(p => p.id === playlistId);
+                    if (newPlaylist && newPlaylist.tracks.length > 0) {
+                        loadTrack(0);
+                    }
+                    
+                } catch (error) {
+                    // Ignorar errores de 'AbortError' (el usuario canceló)
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+                    // ERROR: El IFrame (Canvas) bloquea 'showDirectoryPicker'.
+                    if (error.name === 'SecurityError') {
+                         console.warn("FSA API bloqueada por IFrame, usando fallback.");
+                         // Usar el fallback
+                         fileInputFallback.click();
+                    } else {
+                        console.error("Error al seleccionar carpeta (FSA API):", error);
+                        alertUser(`Error al cargar carpeta: ${error.message}`);
+                    }
+                }
+            } else {
+                // 2. Usar el input de fallback si la API no existe
+                console.log("FSA API no soportada, usando fallback.");
+                fileInputFallback.click();
+            }
+        }
+        
+        /**
+         * NUEVO: Carga recursiva de archivos desde un FileSystemDirectoryHandle.
+         */
+        async function loadFilesFromHandle(dirHandle) {
+            const mp3Files = [];
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.mp3')) {
+                    const file = await entry.getFile();
+                    // Adjuntar la ruta relativa para usarla como 'path'
+                    file.relativePath = (await dirHandle.resolve(entry)).join('/');
+                    mp3Files.push(file);
+                } else if (entry.kind === 'directory') {
+                    // Cargar recursivamente
+                    const subFiles = await loadFilesFromHandle(entry);
+                    mp3Files.push(...subFiles);
+                }
+            }
+            return mp3Files;
+        }
+
+        /**
+         * Maneja los archivos seleccionados (ya sea por API o por fallback).
+         * @param {FileList} files - Los archivos seleccionados.
+         * @param {boolean} isFallback - Si viene del input antiguo.
+         */
+        function handleFileSelect(files, isFallback = false) {
+             if (!files.length) return;
+            
+             const mp3Files = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.mp3'));
+             if (mp3Files.length === 0) {
+                alertUser('No se encontraron archivos MP3 en la carpeta seleccionada.');
+                return;
+             }
+             
+             let playlistName;
+             
+             if (isFallback) {
+                 // Método antiguo: usar webkitRelativePath
+                 const firstFile = mp3Files[0];
+                 const relativePathParts = firstFile.webkitRelativePath.split('/');
+                 playlistName = relativePathParts.length > 1 ? relativePathParts[0] : 'Playlist Cargada';
+             } else {
+                 // Esto no debería llamarse, pero como fallback del fallback
+                 playlistName = 'Playlist Cargada';
+             }
+             
+             const playlistId = generateId();
+             
+             // Procesar, pero SIN handle (no es persistente)
+             processAndAddPlaylist(mp3Files, playlistName, playlistId, null);
+             
+             // Abrir la nueva playlist
+             showTrackList(playlistId);
+             const newPlaylist = allPlaylists.find(p => p.id === playlistId);
+             if (newPlaylist && newPlaylist.tracks.length > 0) {
+                 loadTrack(0);
+             }
+             
+             // Limpiar el input de fallback
+             fileInputFallback.value = ''; 
+        }
+        
+        /**
+         * NUEVO: Maneja la carga de archivos MP3 individuales a una playlist existente.
+         * (Estos no son persistentes)
+         */
+        async function handleAddIndividualTracks(files) {
+            const playlist = getActivePlaylist();
+            if (!playlist) {
+                alertUser("Selecciona una playlist primero.");
+                return;
+            }
+            
+            if (!files.length) return;
+            
+            const mp3Files = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.mp3'));
+            if (mp3Files.length === 0) {
+                alertUser('No se seleccionaron archivos MP3.');
+                return;
+            }
+            
+            alertUser(`Añadiendo ${mp3Files.length} pista(s)...`, 'info', 2000);
+            
+            const startIndex = playlist.tracks.length;
+            
+            for (let i = 0; i < mp3Files.length; i++) {
+                const file = mp3Files[i];
+                const trackData = await readTrackMetadata(file); // Leer metadatos
+                
+                playlist.tracks.push({ 
+                    file, 
+                    url: URL.createObjectURL(file), 
+                    name: trackData.title, // Desde metadatos
+                    artist: trackData.artist, // Desde metadatos
+                    album: trackData.album, // Desde metadatos
+                    cover: trackData.cover, // Desde metadatos
+                    path: 'Archivo individual', 
+                    originalIndex: startIndex + i,
+                    isPersistent: false // No es persistente
+                });
+            }
+            
+            renderTrackList(); // Re-renderizar la lista de tracks
+            updateEventModalPlaylistOptions(); // Actualizar opciones del modal
+            
+            // Si no estaba sonando nada, cargar la primera canción añadida
+            if (currentTrackIndex === -1 && playlist.tracks.length > 0) {
+                loadTrack(startIndex);
+            }
+        }
+        
+        /**
+         * NUEVO: Carga las playlists guardadas en IndexedDB al iniciar.
+         */
+        async function loadPersistedPlaylists() {
+            try {
+                const handles = await getAllFolderHandles();
+                if (!handles || handles.length === 0) {
+                    renderPlaylistsCollection();
+                    return;
+                }
+                
+                // (Error estaba aquí: 'handles' es un array de {id, name, handle})
+                handles.forEach(handleData => {
+                    // Añadir como playlist "vacía" y "persistente"
+                    // Solo mostramos las que están en IDB, no las que se cargaron por fallback
+                    allPlaylists.push({
+                        id: handleData.id,
+                        name: handleData.name,
+                        tracks: [],
+                        isPersistent: true, // Marcar como persistente
+                        handle: handleData.handle // Guardamos el handle por si acaso
+                    });
+                });
+                
+                renderPlaylistsCollection();
+                
+            } catch (error) {
+                console.error("Error al cargar playlists persistentes:", error);
+                renderPlaylistsCollection();
+            }
+        }
+
+        
+        /**
+         * NUEVO: Procesa los archivos y añade la playlist a la colección.
+         * Si se provee un 'handle', la guarda en IndexedDB.
+         */
+        async function processAndAddPlaylist(mp3Files, playlistName, playlistId, handle) {
+             // 1. Revisar si ya existe (por ID)
+            let existingPlaylist = allPlaylists.find(p => p.id === playlistId);
+            
+            // Revocar URLs de objetos antiguos si la playlist existía
+            if (existingPlaylist) {
+                existingPlaylist.tracks.forEach(track => URL.revokeObjectURL(track.url));
+            } else {
+                 existingPlaylist = { id: playlistId, name: playlistName, tracks: [], isPersistent: !!handle };
+                 allPlaylists.push(existingPlaylist);
+            }
+            
+            // Actualizar propiedades
+            existingPlaylist.name = playlistName;
+            existingPlaylist.isPersistent = !!handle;
+            existingPlaylist.tracks = []; // Limpiar tracks
+            
+            // 2. Procesar todos los archivos y leer metadatos
+            for (let i = 0; i < mp3Files.length; i++) {
+                const file = mp3Files[i];
+                const trackData = await readTrackMetadata(file);
+                
+                // Determinar la ruta (path)
+                let path;
+                if (file.relativePath) { // Método FSA API
+                    path = file.relativePath.split('/').slice(0, -1).join('/') || playlistName;
+                } else if (file.webkitRelativePath) { // Método Fallback
+                    path = file.webkitRelativePath.split('/').slice(1, -1).join('/') || playlistName;
+                } else {
+                    path = playlistName;
+                }
+
+                existingPlaylist.tracks.push({
+                    file, // El objeto File (para recargar)
+                    url: URL.createObjectURL(file), // URL temporal
+                    name: trackData.title,
+                    artist: trackData.artist,
+                    album: trackData.album,
+                    cover: trackData.cover,
+                    path: path,
+                    originalIndex: i, // Índice original dentro de la carpeta
+                    isPersistent: !!handle // Marcar si el track es persistente
+                });
+            }
+            
+             // 3. Guardar en IndexedDB (solo si hay un handle)
+            if (handle) {
+                await saveFolderHandle(playlistId, playlistName, handle);
+                console.log(`Playlist persistente "${playlistName}" guardada en IDB.`);
+            }
+
+            // 4. Actualizar UI
+            renderPlaylistsCollection();
+            updateEventModalPlaylistOptions(); 
+            
+            alertUser(`¡Playlist "${playlistName}" (${mp3Files.length} pistas) cargada!`, 'success', 3000);
+        }
+        
+        
+        /**
+         * Lee metadatos (ID3 tags) de un archivo MP3.
+         */
+        async function readTrackMetadata(file) {
+            return new Promise((resolve) => {
+                const defaultData = {
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    artist: 'Artista Desconocido',
+                    album: 'Álbum Desconocido',
+                    cover: null
+                };
+
+                new jsmediatags.Reader(file)
+                    .setTagsToRead(["title", "artist", "album", "picture"])
+                    .read({
+                        onSuccess: (tag) => {
+                            const tags = tag.tags;
+                            const title = tags.title || defaultData.title;
+                            const artist = tags.artist || defaultData.artist;
+                            const album = tags.album || defaultData.album;
+                            let coverUrl = null;
+
+                            if (tags.picture) {
+                                const { data, format } = tags.picture;
+                                const base64String = btoa(String.fromCharCode.apply(null, data));
+                                coverUrl = `data:${format};base64,${base64String}`;
+                            }
+                            
+                            resolve({ title, artist, album, cover: coverUrl });
+                        },
+                        onError: (error) => {
+                            console.warn(`Error al leer metadatos de ${file.name}:`, error.type);
+                            resolve(defaultData);
+                        }
+                    });
+            });
+        }
+        
+        // Renderiza la lista de todas las carpetas cargadas (Vista de Colección)
+        function renderPlaylistsCollection() {
+            collectionListEl.innerHTML = '';
+            if (allPlaylists.length === 0) {
+                emptyPlaylistMsg.classList.remove('hidden');
+                return;
+            }
+            emptyPlaylistMsg.classList.add('hidden');
+            
+            allPlaylists.forEach(playlist => {
+                const el = document.createElement('div');
+                // Si es persistente pero tiene 0 tracks, significa que necesita recargarse
+                const needsReload = playlist.isPersistent && playlist.tracks.length === 0;
+                
+                el.className = `list-item ${playlist.id === activePlaylistId ? 'selected-item' : ''}`;
+                el.dataset.id = playlist.id;
+                
+                // Icono de Carpeta (Playlist)
+                const folderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accent flex-shrink-0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+                
+                // Icono de Papelera (Eliminar)
+                const deleteSvg = `<button data-id="${playlist.id}" class="delete-playlist-btn text-secondary hover:text-red-500 delete-btn flex-shrink-0" aria-label="Eliminar playlist ${playlist.name}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                     </button>`;
+                                     
+                // NUEVO: Icono de Recargar (si es persistente)
+                const reloadSvg = `<button data-id="${playlist.id}" class="reload-playlist-btn text-secondary hover:text-accent delete-btn flex-shrink-0" aria-label="Recargar playlist ${playlist.name}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    </button>`;
+
+                el.innerHTML = `${folderSvg}
+                    <div class="flex-1 overflow-hidden" data-id="${playlist.id}">
+                        <p class="text-primary truncate font-medium">${playlist.name}</p>
+                        <p class="text-secondary text-xs truncate">
+                            ${needsReload ? '(Necesita recargar)' : `${playlist.tracks.length} Pistas`}
+                        </p>
+                    </div>
+                    ${playlist.isPersistent ? reloadSvg : ''}
+                    ${deleteSvg}`;
+                
+                // Para que el clic en el div de texto también funcione
+                el.querySelector('.list-item > div').addEventListener('click', () => handlePlaylistSelection({ target: el }));
+
+                collectionListEl.appendChild(el);
+            });
+            updateEventModalPlaylistOptions(); // Actualizar las opciones del modal
+            updatePomodoroPlaylistOptions(); // Actualizar modal pomodoro
+        }
+
+        // Renderiza las pistas dentro de la playlist activa (Vista de Pistas)
+        // MODIFICADO para usar metadatos y búsqueda
+        function renderTrackList(filter = '') {
+            trackListEl.innerHTML = '';
+            const playlist = getActivePlaylist();
+            if (!playlist) return;
+            
+            const lowerFilter = filter.toLowerCase();
+            
+            // Filtrar pistas
+            const filteredTracks = playlist.tracks.filter(track => {
+                return track.name.toLowerCase().includes(lowerFilter) ||
+                       track.artist.toLowerCase().includes(lowerFilter) ||
+                       track.album.toLowerCase().includes(lowerFilter);
+            });
+
+            if (filteredTracks.length === 0) {
+                trackListEl.innerHTML = `<p class="text-secondary text-sm italic text-center mt-4">No se encontraron pistas${filter ? ' para "' + filter + '"' : ''}.</p>`;
+            }
+
+            filteredTracks.forEach((track) => {
+                const el = document.createElement('div');
+                // Comparamos el originalIndex para el resaltado
+                const isSelected = playlist.tracks[currentTrackIndex]?.originalIndex === track.originalIndex;
+                
+                el.className = `list-item ${isSelected ? 'selected-item' : ''}`; 
+                el.dataset.index = track.originalIndex; // Usamos el originalIndex como ID
+                
+                // Icono (usamos la portada si existe)
+                let iconHtml;
+                if (track.cover) {
+                    iconHtml = `<img src="${track.cover}" alt="Cover" class="w-8 h-8 rounded object-cover flex-shrink-0">`;
+                } else {
+                    iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary flex-shrink-0 w-8 h-8"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>`;
+                }
+
+                // Muestra la ruta (carpeta) y el nombre del archivo
+                el.innerHTML = `${iconHtml}
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-primary truncate font-medium">${track.name}</p>
+                        <p class="text-secondary text-xs truncate">${track.artist} - ${track.album}</p>
+                    </div>`;
+                
+                trackListEl.appendChild(el);
+            });
+            
+            // Asegurarse de que se resalte la playlist activa en la vista de colección
+            renderPlaylistsCollection(); 
+        }
+        
+        /**
+         * NUEVO: Maneja el filtro de búsqueda en la lista de pistas.
+         */
+        function handleTrackSearch(e) {
+            const filter = e.target.value;
+            renderTrackList(filter);
+        }
+
+
+        // --- Lógica del Reproductor (Ajustada para Metadatos) ---
+
+        function loadTrack(trackIndex) {
+            const playlist = getActivePlaylist();
+            if (!playlist || trackIndex < 0 || trackIndex >= playlist.tracks.length) return;
+            
+            currentTrackIndex = trackIndex;
+            const track = playlist.tracks[trackIndex];
+            
+            if (!track.url) {
+                // Si la URL no existe (ej. después de un error), intentamos crearla
+                // (Esto no funcionará para pistas persistentes sin recargar)
+                try {
+                    track.url = URL.createObjectURL(track.file);
+                } catch (e) {
+                    console.error("Error al crear URL para el track:", e);
+                    alertUser("Error al cargar la pista. Intenta recargar la playlist.");
+                    return;
+                }
+            }
+            
+            audioPlayer.src = track.url;
+            updatePlayerDisplay(true);
+            
+            renderTrackList(trackSearchInput.value); // Para actualizar el resaltado
+            
+            // Actualizar fondo del visualizador
+            updateVisualizerBackground(track.cover);
+
+            if (isPlaying) {
+                playAudio();
+            }
+        }
+        
+        function updatePlayerDisplay(hasTrack) {
+             if (hasTrack && currentTrackIndex !== -1) {
+                const playlist = getActivePlaylist();
+                if (!playlist) {
+                    updatePlayerDisplay(false); // Llamada recursiva para limpiar
+                    return;
+                }
+                const track = playlist.tracks[currentTrackIndex];
+                currentTrackTitle.textContent = track.name;
+                currentTrackArtist.textContent = track.artist;
+             } else {
+                currentTrackTitle.textContent = '...';
+                currentTrackArtist.textContent = 'Selecciona una canción';
+                totalTimeEl.textContent = '0:00';
+                currentTimeEl.textContent = '0:00';
+                progressBar.value = 0;
+                updateVisualizerBackground(null); // Limpiar fondo del visualizador
+             }
+        }
+
+        function togglePlayPause() {
+            if (!getActivePlaylist() || getActivePlaylist().tracks.length === 0) {
+                alertUser('Por favor, carga una playlist con música primero.');
+                return;
+            }
+            
+            if (currentTrackIndex === -1) {
+                loadTrack(0); // Cargar la primera pista si no hay ninguna
+            }
+
+            if (isPlaying) {
+                pauseAudio();
+            } else {
+                playAudio();
+            }
+        }
+
+        function playAudio() {
+            // Iniciar AudioContext en la primera interacción del usuario
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                logMemory(); // Loguear recuerdo al reproducir
+                rafId = requestAnimationFrame(drawVisualizer); // Iniciar visualizador
+            }).catch(e => {
+                console.error("Error al reproducir:", e);
+                pauseAudio(); // Asegurarse de que el estado es 'pausa'
+            });
+        }
+
+        function pauseAudio() {
+            audioPlayer.pause();
+            isPlaying = false;
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            cancelAnimationFrame(rafId); // Detener visualizador
+        }
+        
+        function playNextTrack() {
+            const playlist = getActivePlaylist();
+            if (!playlist || playlist.tracks.length === 0) return;
+            
+            let nextIndex;
+            
+            if (isShuffle) {
+                nextIndex = Math.floor(Math.random() * playlist.tracks.length);
+            } else {
+                nextIndex = (currentTrackIndex + 1) % playlist.tracks.length;
+            }
+            
+            loadTrack(nextIndex);
+            // playAudio(); // loadTrack ya lo hace si isPlaying es true
+        }
+        
+        function playPrevTrack() {
+            const playlist = getActivePlaylist();
+            if (!playlist || playlist.tracks.length === 0) return;
+            
+            // Si la canción lleva más de 3 segundos, la reinicia. Si no, va a la anterior.
+            if (audioPlayer.currentTime > 3) {
+                audioPlayer.currentTime = 0;
+            } else {
+                let prevIndex;
+                if (isShuffle) {
+                    prevIndex = Math.floor(Math.random() * playlist.tracks.length);
+                } else {
+                    prevIndex = (currentTrackIndex - 1 + playlist.tracks.length) % playlist.tracks.length;
+                }
+                loadTrack(prevIndex);
+                // playAudio(); // loadTrack ya lo hace si isPlaying es true
+            }
+        }
+
+        function handleTrackEnd() {
+            const playlist = getActivePlaylist();
+            if (!playlist || playlist.tracks.length === 0) return;
+
+            if (repeatMode === 'one') {
+                playAudio(); // Repite la misma
+            } else if (repeatMode === 'all') {
+                playNextTrack(); // Va a la siguiente (respetando shuffle)
+            } else {
+                // repeatMode === 'none'
+                if (!isShuffle && currentTrackIndex === playlist.tracks.length - 1) {
+                    pauseAudio(); // Fin de la playlist
+                    currentTrackIndex = 0; // Se queda en la primera
+                    loadTrack(currentTrackIndex); // Carga la info de la primera
+                } else {
+                    playNextTrack();
+                }
+            }
+        }
+
+        function updateProgress() {
+            if (isNaN(audioPlayer.duration)) return;
+            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressBar.value = percent;
+            currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+        }
+        
+        function updateTime() {
+            totalTimeEl.textContent = formatTime(audioPlayer.duration);
+        }
+
+        function handleSeek(e) {
+            if (isNaN(audioPlayer.duration)) return;
+            const time = (e.target.value / 100) * audioPlayer.duration;
+            audioPlayer.currentTime = time;
+        }
+        
+        function handleVolume(e) {
+            audioPlayer.volume = e.target.value;
+        }
+        
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            shuffleBtn.classList.toggle('text-accent', isShuffle);
+            shuffleBtn.classList.toggle('text-secondary', !isShuffle);
+        }
+        
+        function toggleRepeat() {
+            if (repeatMode === 'none') {
+                repeatMode = 'all';
+                repeatBtn.classList.add('text-accent');
+                repeatBtn.classList.remove('text-secondary');
+                // Icono repeat (normal)
+                repeatBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>'; 
+            } else if (repeatMode === 'all') {
+                repeatMode = 'one';
+                // Icono repeat-one
+                repeatBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path><path d="M11 10h1v4"></path></svg>';
+            } else {
+                repeatMode = 'none';
+                repeatBtn.classList.remove('text-accent');
+                repeatBtn.classList.add('text-secondary');
+                // Icono repeat (normal)
+                repeatBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
+            }
+        }
+        
+        // --- Lógica del Visualizador ---
+        
+        function initAudioContext() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                
+                // Conectar el <audio> al analyser
+                sourceNode = audioContext.createMediaElementSource(audioPlayer);
+                sourceNode.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            } catch (e) {
+                console.error("Web Audio API no soportada:", e);
+                alertUser("Tu navegador no soporta el visualizador de audio.", 'warning');
+            }
+        }
+        
+        function drawVisualizer() {
+            if (!isPlaying || !analyser) {
+                cancelAnimationFrame(rafId);
+                return;
+            }
+            
+            rafId = requestAnimationFrame(drawVisualizer);
+            
+            analyser.getByteFrequencyData(dataArray);
+            
+            const canvasCtx = audioCanvas.getContext('2d');
+            const { width, height } = audioCanvas;
+            canvasCtx.clearRect(0, 0, width, height);
+            
+            const barWidth = (width / analyser.frequencyBinCount) * 1.5;
+            let x = 0;
+            
+            // Obtener el color de acento del tema actual
+            const themeAccentColor = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#3b82f6';
+
+            for (let i = 0; i < analyser.frequencyBinCount; i++) {
+                const barHeight = (dataArray[i] / 255) * height * 0.8;
+                
+                canvasCtx.fillStyle = themeAccentColor;
+                canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+                
+                x += barWidth + 2; // +2 de espacio
+            }
+        }
+
+        function showVisualizer() {
+            mainContent.classList.add('hidden-view');
+            visualizerPanel.classList.remove('hidden');
+            visualizerPanel.classList.add('flex');
+            
+            // Ajustar tamaño del canvas (importante para que no se vea borroso)
+            const canvasContainer = visualizerPanel.querySelector('.flex-1');
+            audioCanvas.width = canvasContainer.clientWidth * 0.9;
+            audioCanvas.height = canvasContainer.clientHeight * 0.8;
+            
+            if (isPlaying) {
+                rafId = requestAnimationFrame(drawVisualizer);
+            }
+        }
+        
+        function hideVisualizer() {
+            mainContent.classList.remove('hidden-view');
+            visualizerPanel.classList.add('hidden');
+            visualizerPanel.classList.remove('flex');
+            cancelAnimationFrame(rafId);
+        }
+        
+        function updateVisualizerBackground(coverUrl) {
+            if (coverUrl) {
+                // Aplicar fondo difuminado
+                audioCanvas.style.backgroundImage = `url(${coverUrl})`;
+                audioCanvas.style.boxShadow = 'inset 0 0 100px 50px rgba(0,0,0,0.7)';
+            } else {
+                // Limpiar fondo
+                audioCanvas.style.backgroundImage = 'none';
+                audioCanvas.style.boxShadow = 'none';
+            }
+        }
+
+        // --- Lógica del Calendario y Eventos ---
+        
+        /**
+         * NUEVO: Carga datos de festivos (simulado).
+         * En una app real, esto vendría de una API.
+         */
+        async function loadHolidayData() {
+            // Simulación de una API de festivos (ej. España 2025)
+            holidays = {
+                '01-01': { name: 'Año Nuevo', effect: 'snow' },
+                '01-06': { name: 'Día de Reyes', effect: 'snow' },
+                '05-01': { name: 'Día del Trabajador' },
+                '08-15': { name: 'Asunción de la Virgen' },
+                '10-12': { name: 'Fiesta Nacional de España' },
+                '10-31': { name: 'Halloween', effect: 'halloween' }, // Añadido
+                '11-01': { name: 'Día de Todos los Santos', effect: 'fog' }, // Añadido
+                '12-06': { name: 'Día de la Constitución' },
+                '12-08': { name: 'Inmaculada Concepción' },
+                '12-25': { name: 'Navidad', effect: 'snow' },
+            };
+        }
+        
+        /**
+         * NUEVO: Comprueba si hoy es festivo y aplica efectos.
+         */
+        function checkHolidayEffect() {
+            const now = new Date();
+            const memoryKey = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const holiday = holidays[memoryKey];
+            
+            holidayOverlay.innerHTML = ''; // Limpiar efectos
+            document.documentElement.classList.remove('halloween-theme');
+
+            if (!holiday || !holiday.effect) return;
+
+            if (holiday.effect === 'snow') {
+                for (let i = 0; i < 50; i++) {
+                    const flake = document.createElement('div');
+                    flake.className = 'snow-flake';
+                    flake.textContent = '❄️';
+                    flake.style.left = `${Math.random() * 100}vw`;
+                    flake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                    flake.style.animationDelay = `${Math.random() * 5}s`;
+                    flake.style.fontSize = `${Math.random() * 10 + 10}px`;
+                    holidayOverlay.appendChild(flake);
+                }
+            } else if (holiday.effect === 'fog') {
+                const fog = document.createElement('div');
+                fog.className = 'fog-layer';
+                holidayOverlay.appendChild(fog);
+            } else if (holiday.effect === 'halloween') {
+                document.documentElement.classList.add('halloween-theme');
+                // Podríamos añadir murciélagos o calabazas si quisiéramos
+            }
+        }
+        
+        function renderCalendar() {
+            calendarGrid.innerHTML = ''; 
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth(); 
+            
+            monthYearHeader.textContent = `${currentDate.toLocaleString('es-ES', { month: 'long' })} ${year}`.replace(/^\w/, c => c.toUpperCase());
+            
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); 
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            
+            // Rellenar días vacíos al inicio
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                calendarGrid.appendChild(emptyCell);
+            }
+            
+            // Rellenar días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day p-2 border-2 border-transparent rounded-lg cursor-pointer flex flex-col items-start justify-start text-primary';
+                dayCell.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Contenedor para el número del día
+                const dayNumber = document.createElement('span');
+                dayNumber.textContent = day;
+                dayCell.appendChild(dayNumber);
+                
+                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    dayCell.classList.add('today', 'font-bold');
+                }
+                
+                // Buscar eventos y recuerdos (MODIFICADO para incluir recurrentes y festivos)
+                const dateString = dayCell.dataset.date;
+                const memoryKey = dateString.substring(5); // MM-DD
+                
+                const dayEvents = events[dateString] || [];
+                const dayRecurringEvents = recurringEvents[memoryKey] || [];
+                const dayMemories = memories[memoryKey];
+                const dayHoliday = holidays[memoryKey];
+
+                const indicators = document.createElement('div');
+                indicators.className = 'flex flex-wrap gap-1 mt-auto'; // mt-auto empuja al fondo
+
+                let hasEvent = false, hasTask = false, hasBirthday = false;
+
+                // Comprobar eventos únicos
+                dayEvents.forEach(evt => {
+                    if (evt.type === 'event') hasEvent = true;
+                    if (evt.type === 'task') hasTask = true;
+                });
+                // Comprobar eventos recurrentes
+                dayRecurringEvents.forEach(evt => {
+                    if (evt.type === 'event') hasEvent = true;
+                    if (evt.type === 'task') hasTask = true;
+                    if (evt.type === 'birthday') hasBirthday = true;
+                });
+
+                // Añadir puntos de color
+                if (dayMemories && dayMemories.length > 0) {
+                    const memoryDot = document.createElement('div');
+                    memoryDot.className = 'w-2 h-2 rounded-full calendar-day-memory';
+                    memoryDot.title = 'Recuerdos';
+                    indicators.appendChild(memoryDot);
+                }
+                if (hasEvent) {
+                    const eventDot = document.createElement('div');
+                    eventDot.className = 'w-2 h-2 rounded-full calendar-day-event';
+                    eventDot.title = 'Eventos';
+                    indicators.appendChild(eventDot);
+                }
+                if (hasTask) {
+                    const taskDot = document.createElement('div');
+                    taskDot.className = 'w-2 h-2 rounded-full calendar-day-task';
+                    taskDot.title = 'Tareas';
+                    indicators.appendChild(taskDot);
+                }
+                if (hasBirthday) {
+                    const birthdayDot = document.createElement('div');
+                    birthdayDot.className = 'w-2 h-2 rounded-full calendar-day-birthday';
+                    birthdayDot.title = 'Cumpleaños';
+                    indicators.appendChild(birthdayDot);
+                }
+                if (dayHoliday) {
+                    const holidayDot = document.createElement('div');
+                    holidayDot.className = 'w-2 h-2 rounded-full calendar-day-holiday';
+                    holidayDot.title = dayHoliday.name;
+                    indicators.appendChild(holidayDot);
+                }
+
+                dayCell.appendChild(indicators);
+                
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+        
+        function showPrevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+        
+        function showNextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+        
+        function handleDayClick(e) {
+            const dayCell = e.target.closest('.calendar-day');
+            if (!dayCell || !dayCell.dataset.date) return;
+            
+            const dateString = dayCell.dataset.date;
+            const date = new Date(dateString + 'T00:00:00'); // Ajuste de zona horaria
+            
+            modalDateHeader.textContent = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            eventDateInput.value = dateString;
+            
+            // Cargar todo el contenido del modal
+            populateModalLists(dateString);
+            
+            // Asegurarse de que las listas desplegables del modal estén actualizadas
+            updateEventModalPlaylistOptions(); 
+            updateModalFormOptions(); // Resetear el estado del formulario
+
+            eventModal.classList.remove('hidden');
+        }
+
+
+        // --- Lógica de Modal/Eventos (MODIFICADA) ---
+        
+        /**
+         * Rellena las listas de Recuerdos, Festivos, Eventos y Tareas en el modal.
+         * MODIFICADO: Ahora es async para cargar imágenes locales.
+         */
+        async function populateModalLists(dateString) {
+            const memoryKey = dateString.substring(5); // MM-DD
+            
+            // 1. Cargar Recuerdos
+            const dayMemories = memories[memoryKey] || [];
+            modalMemoriesList.innerHTML = '';
+            if (dayMemories.length > 0) {
+                dayMemories.forEach(mem => {
+                    const playlist = allPlaylists.find(p => p.id === mem.playlistId);
+                    const playlistName = playlist ? ` (${playlist.name})` : '';
+                    const p = document.createElement('p');
+                    p.textContent = `(${mem.year}) ${mem.trackName}${playlistName}`;
+                    modalMemoriesList.appendChild(p);
+                });
+            } else {
+                modalMemoriesList.innerHTML = '<p class="italic text-secondary">No hay recuerdos para este día.</p>';
+            }
+
+            // 2. Cargar Festivos
+            const dayHoliday = holidays[memoryKey];
+            modalHolidaysList.innerHTML = '';
+            if (dayHoliday) {
+                const p = document.createElement('p');
+                p.className = "text-red-500 font-semibold";
+                p.textContent = `🎉 ${dayHoliday.name}`;
+                modalHolidaysList.appendChild(p);
+                modalHolidaysContainer.classList.remove('hidden');
+            } else {
+                modalHolidaysContainer.classList.add('hidden');
+            }
+
+            // 3. Cargar Eventos y Tareas (de ambos almacenes)
+            const dayEvents = events[dateString] || [];
+            const dayRecurringEvents = recurringEvents[memoryKey] || [];
+            const allItems = [...dayEvents, ...dayRecurringEvents];
+            
+            modalEventsList.innerHTML = '';
+            if (allItems.length > 0) {
+                // Usamos un bucle for...of para poder usar await dentro
+                for (const item of allItems) {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'p-2 rounded-md bg-gray-500/10 border-l-4';
+                    
+                    let icon = '📅'; // Evento
+                    let borderColor = 'border-blue-500'; // Evento (default)
+                    
+                    if (item.type === 'task') {
+                        icon = `<input type="checkbox" class="task-check-item h-5 w-5 rounded task-checkbox" data-id="${item.id}" data-date="${dateString}" ${item.isCompleted ? 'checked' : ''}>`;
+                        borderColor = 'border-yellow-500';
+                    } else if (item.type === 'birthday') {
+                        icon = '🎂';
+                        borderColor = 'border-purple-500';
+                    }
+                    
+                    itemEl.classList.add(borderColor);
+                    
+                    let timeString = item.isAllDay ? 'Todo el día' : (item.time || 'Hora no definida');
+                    if (item.type === 'birthday') timeString = 'Cumpleaños';
+
+                    // Botón de eliminar
+                    const deleteBtnHtml = `<button class="delete-item-btn p-1 rounded hover:bg-red-500/20 text-secondary hover:text-red-500 ml-auto" data-id="${item.id}" data-date="${dateString}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                           </button>`;
+
+                    // Sección de música (si existe)
+                    let musicHtml = '';
+                    if (item.playlistId && item.trackTitle) {
+                        const playlist = allPlaylists.find(p => p.id === item.playlistId);
+                        const playlistName = playlist ? playlist.name : 'Playlist eliminada';
+                        musicHtml = `<p class="text-xs text-secondary mt-1 pl-1 border-l-2 border-gray-500/50">
+                                        🎵 ${item.trackTitle} (${playlistName})
+                                     </p>`;
+                    }
+                    
+                    // Sección de imagen (NUEVO: Lógica async)
+                    let imageHtml = '';
+                    if (item.imageId) { // Priorizar imagen local
+                        try {
+                            const imgBlob = await getImage(item.imageId);
+                            if (imgBlob) {
+                                const objectURL = URL.createObjectURL(imgBlob);
+                                imageHtml = `<img src="${objectURL}" alt="Evento" class="mt-2 rounded-lg max-h-40 w-full object-cover" onload="URL.revokeObjectURL(this.src)">`;
+                            }
+                        } catch (error) {
+                            console.error("Error al cargar imagen local para el modal:", error);
+                        }
+                    } else if (item.imageUrl) { // Fallback a URL de internet
+                        imageHtml = `<img src="${item.imageUrl}" alt="Evento" class="mt-2 rounded-lg max-h-40 w-full object-cover" onerror="this.style.display='none'">`;
+                    }
+
+
+                    itemEl.innerHTML = `
+                        <div class="flex items-start gap-2">
+                            <div class="mt-0.5">${icon}</div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-primary ${item.isCompleted ? 'line-through text-secondary' : ''}">
+                                    ${item.description}
+                                </p>
+                                <p class="text-xs text-accent">${timeString}</p>
+                                ${musicHtml}
+                                ${imageHtml}
+                            </div>
+                            ${deleteBtnHtml}
+                        </div>
+                    `;
+                    modalEventsList.appendChild(itemEl);
+                }
+            } else {
+                modalEventsList.innerHTML = '<p class="italic text-secondary">No hay eventos ni tareas.</p>';
+            }
+        }
+        
+        /**
+         * Actualiza la visibilidad de los campos del formulario modal según el tipo.
+         */
+        function updateModalFormOptions() {
+            const type = eventTypeSelect.value;
+            const isAllDay = eventAllDayCheckbox.checked;
+
+            if (type === 'birthday') {
+                // Cumpleaños: Forzar "Todo el día" y "Repetir", ocultar hora y música
+                eventAllDayCheckbox.checked = true;
+                eventAllDayCheckbox.disabled = true;
+                eventRepeatCheckbox.checked = true;
+                eventRepeatCheckbox.disabled = true;
+                eventTimeContainer.classList.add('hidden');
+                eventMusicContainer.classList.add('hidden');
+                eventRepeatContainer.classList.remove('hidden');
+            } else if (type === 'task') {
+                // Tarea: Ocultar música y repetir
+                eventAllDayCheckbox.disabled = false;
+                eventRepeatCheckbox.checked = false;
+                eventRepeatCheckbox.disabled = false;
+                eventTimeContainer.classList.toggle('hidden', isAllDay);
+                eventMusicContainer.classList.add('hidden');
+                eventRepeatContainer.classList.add('hidden');
+            } else { // 'event'
+                // Evento: Mostrar todo
+                eventAllDayCheckbox.disabled = false;
+                eventRepeatCheckbox.disabled = false;
+                eventTimeContainer.classList.toggle('hidden', isAllDay);
+                eventMusicContainer.classList.remove('hidden');
+                eventRepeatContainer.classList.remove('hidden');
+            }
+        }
+
+        function updateEventModalPlaylistOptions() {
+            eventPlaylistSelect.innerHTML = '<option value="">-- Selecciona una playlist --</option>';
+            pomodoroPlaylistSelect.innerHTML = '<option value="">-- Sin música --</option>'; // Actualizar pomodoro también
+            
+            allPlaylists.forEach(playlist => {
+                // Solo añadir si tiene pistas cargadas
+                if (playlist.tracks.length > 0) {
+                    const option = document.createElement('option');
+                    option.value = playlist.id;
+                    option.textContent = playlist.name;
+                    eventPlaylistSelect.appendChild(option.cloneNode(true));
+                    pomodoroPlaylistSelect.appendChild(option);
+                }
+            });
+            updateSongSelectOptions(); // Resetear la lista de canciones
+        }
+        
+        function updateSongSelectOptions() {
+            const playlistId = eventPlaylistSelect.value;
+            eventSongSelect.innerHTML = '<option value="">-- Selecciona una canción --</option>';
+            
+            if (!playlistId) return;
+
+            const playlist = allPlaylists.find(p => p.id === playlistId);
+            if (!playlist) return;
+
+            playlist.tracks.forEach((track) => {
+                const option = document.createElement('option');
+                // Usamos el originalIndex como valor
+                option.value = track.originalIndex; 
+                option.textContent = `${track.name} (${track.artist})`; 
+                eventSongSelect.appendChild(option);
+            });
+        }
+        
+        // MODIFICADO: AÑADIDO async y lógica para guardar imagen local
+        async function handleEventFormSubmit(e) {
+            e.preventDefault();
+            const date = eventDateInput.value; 
+            const type = eventTypeSelect.value;
+            const description = eventDescriptionInput.value.trim();
+            
+            let imageId = null;
+            let imageUrl = null;
+
+            // Priorizar imagen local
+            const localFile = eventImageLocalInput.files[0];
+            if (localFile) {
+                if (localFile.size > 5 * 1024 * 1024) { // 5MB limit
+                    alertUser("La imagen es demasiado grande (máx 5MB).");
+                    return;
+                }
+                imageId = generateId();
+                try {
+                    await saveImage(imageId, localFile);
+                } catch (error) {
+                    console.error("Error al guardar imagen local:", error);
+                    alertUser("No se pudo guardar la imagen local.");
+                    imageId = null;
+                }
+            } else {
+                imageUrl = eventImageUrlInput.value.trim() || null;
+            }
+            
+            let isAllDay, time, isRepeating;
+
+            if (type === 'birthday') {
+                isAllDay = true;
+                time = null;
+                isRepeating = true;
+            } else {
+                isAllDay = eventAllDayCheckbox.checked;
+                time = isAllDay ? null : eventTimeInput.value;
+                isRepeating = eventRepeatCheckbox.checked;
+            }
+            
+            if (description.length === 0) {
+                alertUser('Por favor, añade una descripción.');
+                return;
+            }
+            
+            // Encontrar la playlist y el track (si se seleccionó)
+            const playlistId = (type === 'event' || type === 'task') ? eventPlaylistSelect.value || null : null;
+            const trackIndex = (type === 'event' || type === 'task') ? parseInt(eventSongSelect.value) : null;
+            let trackTitle = null;
+            
+            if (playlistId && (trackIndex !== null && !isNaN(trackIndex))) {
+                 const playlist = allPlaylists.find(p => p.id === playlistId);
+                 if (playlist) {
+                     // Encontrar el track por su originalIndex
+                     const track = playlist.tracks.find(t => t.originalIndex === trackIndex);
+                     if (track) {
+                         trackTitle = track.name;
+                     }
+                 }
+            }
+
+            const newItem = {
+                id: generateId(),
+                type, 
+                description,
+                imageUrl: imageUrl, // URL de internet (o null si se usó local)
+                imageId: imageId,   // ID de IDB (o null si se usó URL)
+                isAllDay,
+                time: (type === 'task' && !time) ? null : time, 
+                isCompleted: false, 
+                playlistId: playlistId,
+                trackIndex: (trackIndex !== null && !isNaN(trackIndex)) ? trackIndex : null, // Guardamos el originalIndex
+                trackTitle: trackTitle
+            };
+
+            if (isRepeating) {
+                const recurringKey = date.substring(5); // MM-DD
+                if (!recurringEvents[recurringKey]) {
+                    recurringEvents[recurringKey] = [];
+                }
+                recurringEvents[recurringKey].push(newItem);
+            } else {
+                if (!events[date]) {
+                    events[date] = [];
+                }
+                events[date].push(newItem);
+            }
+            
+            saveToLocalStorage();
+            renderCalendar(); // Actualizar puntos en el calendario
+            await populateModalLists(date); // Recargar el modal (ahora es async)
+            eventForm.reset(); // Limpiar formulario
+            updateModalFormOptions(); // Resetear visibilidad de campos
+            eventImageLocalInput.value = ''; // Limpiar input de archivo
+        }
+        
+        /**
+         * NUEVO: Maneja el clic en el checkbox de una tarea.
+         */
+        function handleToggleTask(checkbox) {
+            const itemId = checkbox.dataset.id;
+            const dateString = checkbox.dataset.date;
+            const memoryKey = dateString.substring(5);
+            
+            // Buscar en ambos almacenes
+            let item = events[dateString]?.find(i => i.id === itemId);
+            if (!item) {
+                item = recurringEvents[memoryKey]?.find(i => i.id === itemId);
+            }
+            
+            if (item) {
+                item.isCompleted = checkbox.checked;
+                saveToLocalStorage();
+                // Re-popular el modal para mostrar el estado tachado
+                populateModalLists(dateString);
+            }
+        }
+        
+        /**
+         * NUEVO: Maneja el clic en el botón de eliminar un item.
+         * MODIFICADO: Ahora es async para borrar imagen local.
+         */
+        async function handleDeleteItem(button) {
+            const itemId = button.dataset.id;
+            const dateString = button.dataset.date;
+            const memoryKey = dateString.substring(5);
+            let itemFound = false;
+            let imageIdToDelete = null;
+            
+            // Buscar y eliminar de eventos únicos
+            if (events[dateString]) {
+                const item = events[dateString].find(i => i.id === itemId);
+                if (item) {
+                    imageIdToDelete = item.imageId; // Marcar imagen para borrar
+                    events[dateString] = events[dateString].filter(i => i.id !== itemId);
+                    if (events[dateString].length === 0) delete events[dateString];
+                    itemFound = true;
+                }
+            }
+            
+            // Buscar y eliminar de eventos recurrentes
+            if (!itemFound && recurringEvents[memoryKey]) {
+                const item = recurringEvents[memoryKey].find(i => i.id === itemId);
+                 if (item) {
+                    imageIdToDelete = item.imageId; // Marcar imagen para borrar
+                    recurringEvents[memoryKey] = recurringEvents[memoryKey].filter(i => i.id !== itemId);
+                    if (recurringEvents[memoryKey].length === 0) delete recurringEvents[memoryKey];
+                    itemFound = true;
+                }
+            }
+            
+            if (itemFound) {
+                // Si el item tenía una imagen local, borrarla de IDB
+                if (imageIdToDelete) {
+                    await deleteImage(imageIdToDelete);
+                }
+                
+                saveToLocalStorage();
+                renderCalendar();
+                await populateModalLists(dateString);
+            }
+        }
+
+
+        function logMemory() {
+            if (!getActivePlaylist() || currentTrackIndex < 0) return;
+            
+            const now = new Date();
+            const year = now.getFullYear();
+            const memoryKey = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            const playlist = getActivePlaylist();
+            const track = playlist.tracks[currentTrackIndex];
+
+            const playlistId = playlist.id;
+            const trackName = track.name; // Usar nombre del metadato
+            
+            if (!memories[memoryKey]) {
+                memories[memoryKey] = [];
+            }
+            
+            // Evitar duplicados exactos del mismo año y misma pista en la misma playlist
+            const alreadyLogged = memories[memoryKey].some(mem => 
+                mem.year === year && 
+                mem.trackName === trackName &&
+                mem.playlistId === playlistId
+            );
+            
+            if (!alreadyLogged) {
+                memories[memoryKey].push({ year, playlistId, trackName });
+                saveToLocalStorage();
+                renderCalendar(); // Actualizar por si es el día de hoy
+            }
+        }
+        
+        // --- Lógica de Alarma (Multimedia Event) ---
+        
+        // Revisor simple de eventos.
+        setInterval(() => {
+            const now = new Date();
+            const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            const todayEvents = events[dateString] || [];
+            
+            // (Los eventos recurrentes no deberían tener alarmas, solo los únicos)
+            
+            if (todayEvents) {
+                todayEvents.forEach((evt, index) => {
+                    // Solo si el minuto actual coincide y no se ha disparado
+                    // Y SOLO si es un 'event', no es 'all day' y tiene una canción
+                    if (evt.type === 'event' && 
+                        !evt.isAllDay && 
+                        evt.time === timeString && 
+                        evt.playlistId && 
+                        (evt.trackIndex !== null && !isNaN(evt.trackIndex)) &&
+                        !evt.triggered) { 
+                        
+                        evt.triggered = true; 
+                        playEvent(evt);
+                        // Restablecer el flag de disparo después del minuto para que funcione el día siguiente
+                        setTimeout(() => { evt.triggered = false; }, 60000); 
+                    }
+                });
+            }
+        }, 10000); // Comprueba cada 10 segundos
+
+        function playEvent(event) {
+            const playlist = allPlaylists.find(p => p.id === event.playlistId);
+            if (!playlist) {
+                console.warn("No se pudo reproducir el evento, playlist no encontrada");
+                return;
+            }
+            
+            // Buscar el track por su 'originalIndex' guardado
+            const track = playlist.tracks.find(t => t.originalIndex === event.trackIndex);
+            if (!track) {
+                console.warn("No se pudo reproducir el evento, pista no encontrada");
+                return;
+            }
+            
+            // Encontrar el índice real de ese track en el array actual
+            const actualTrackIndex = playlist.tracks.indexOf(track);
+            
+            // 1. Guardar estado actual del pomodoro (si está activo)
+            const pomodoroActive = pomodoroInterval;
+            if (pomodoroActive) {
+                stopPomodoro(false); // Detener pomodoro sin limpiar UI
+            }
+            
+            // 2. Pausar lo que esté sonando
+            pauseAudio();
+            
+            // 3. Establecer la playlist del evento como activa
+            activePlaylistId = event.playlistId;
+            showTrackList(activePlaylistId); // Mostrar la lista de pistas
+            
+            // 4. Cargar y reproducir la pista del evento
+            loadTrack(actualTrackIndex);
+            playAudio();
+            
+            // 5. Mostrar una "notificación" (simulada)
+            alertUser(`¡Alarma de Evento!\nReproduciendo: ${track.name}`, 'info', 10000);
+            
+            // 6. Si el pomodoro estaba activo, reiniciarlo después de la canción (o no)
+            // (Por ahora, la alarma interrumpe el pomodoro)
+        }
+
+
+        // --- Lógica de UI/Temas ---
+
+        function handleThemeChange(e) {
+            const btn = e.target.closest('.theme-btn');
+            if (!btn) return;
+            updateTheme(btn.dataset.theme);
+            toggleFabMenu(); // Cerrar el menú
+        }
+        
+        function updateTheme(themeName) {
+            document.documentElement.className = themeName; // Reemplaza todas las clases
+            localStorage.setItem('musicTheme', themeName);
+        }
+        
+        function toggleFabMenu() {
+            fabContainer.classList.toggle('open');
+        }
+        
+        // Función personalizada para mostrar mensajes (en lugar de alert() o confirm())
+        function alertUser(message, type = 'info', duration = 4000) {
+            // Usamos el modal para un aviso simple
+            showCustomModal(type.toUpperCase(), message, [
+                { text: 'Aceptar', action: () => hideCustomModal(), style: 'button-primary' }
+            ]);
+            
+            // Opcional: auto-cerrar si es solo informativo
+            if (type === 'info' || type === 'success') {
+                setTimeout(() => {
+                    // Solo cierra si el modal que se está mostrando es el que acabamos de crear
+                    if (customModalTitle.textContent === type.toUpperCase()) {
+                         hideCustomModal();
+                    }
+                }, duration);
+            }
+        }
+        
+        /**
+         * Muestra el modal genérico para confirmaciones o avisos.
+         * @param {string} title - Título del modal.
+         * @param {string} text - Contenido del mensaje.
+         * @param {Array<Object>} actions - Array de objetos {text, action, style} para los botones.
+         */
+        function showCustomModal(title, text, actions) {
+            customModalTitle.textContent = title;
+            customModalText.textContent = text;
+            customModalActions.innerHTML = '';
+            
+            actions.forEach(btnConfig => {
+                const btn = document.createElement('button');
+                btn.textContent = btnConfig.text;
+                btn.className = `px-4 py-2 rounded-lg font-semibold shadow-md ${btnConfig.style === 'button-primary' ? 'button-primary' : 'bg-gray-500/20 text-primary hover:bg-gray-500/30'}`;
+                btn.onclick = btnConfig.action;
+                customModalActions.appendChild(btn);
+            });
+            
+            customModal.classList.remove('hidden');
+        }
+
+        function hideCustomModal() {
+            customModal.classList.add('hidden');
+        }
+        
+        /**
+         * Muestra el modal de confirmación con lógica de Sí/No.
+         * @param {string} title 
+         * @param {string} text 
+         * @param {function} onConfirm 
+         * @param {function} onCancel 
+         */
+        function showConfirmationModal(title, text, onConfirm, onCancel) {
+            showCustomModal(title, text, [
+                { text: 'Cancelar', action: onCancel, style: 'bg-gray' },
+                { text: 'Eliminar', action: onConfirm, style: 'button-primary' } // O un texto más genérico como "Aceptar"
+            ]);
+        }
+        
+        // --- Lógica del Pomodoro ---
+
+        function showPomodoroModal() {
+            // Asegurarse de que las playlists están cargadas
+            updatePomodoroPlaylistOptions();
+            pomodoroModal.classList.remove('hidden');
+        }
+        
+        function hidePomodoroModal() {
+            pomodoroModal.classList.add('hidden');
+        }
+        
+        function startPomodoro() {
+            hidePomodoroModal();
+            
+            const minutes = pomodoroDuration;
+            pomodoroEndTime = Date.now() + minutes * 60000;
+
+            // 1. Guardar estado de reproducción actual
+            pomodoroOriginalPlaylist.id = activePlaylistId;
+            pomodoroOriginalPlaylist.trackIndex = currentTrackIndex;
+            
+            // 2. Iniciar playlist de focus (si se seleccionó)
+            const focusPlaylistId = pomodoroPlaylistSelect.value;
+            if (focusPlaylistId) {
+                const focusPlaylist = allPlaylists.find(p => p.id === focusPlaylistId);
+                if (focusPlaylist && focusPlaylist.tracks.length > 0) {
+                    activePlaylistId = focusPlaylistId;
+                    showTrackList(activePlaylistId); // Actualizar UI
+                    loadTrack(0); // Cargar la primera pista
+                    playAudio();
+                    // Forzar modo aleatorio y repetir todo para la sesión de focus
+                    if (!isShuffle) toggleShuffle();
+                    if (repeatMode !== 'all') toggleRepeat(); // Cambia a 'all' o 'one'
+                    if (repeatMode === 'one') toggleRepeat(); // Cambia a 'none'
+                    if (repeatMode === 'none') toggleRepeat(); // Cambia a 'all'
+                }
+            } else {
+                // Si no se selecciona música, pausar la actual
+                pauseAudio();
+            }
+
+            // 3. Iniciar temporizador
+            updatePomodoroDisplay();
+            pomodoroInterval = setInterval(updatePomodoroDisplay, 1000);
+            
+            // 4. Mostrar UI del temporizador
+            pomodoroBtn.classList.add('hidden');
+            pomodoroDisplay.classList.remove('hidden');
+            pomodoroDisplay.classList.add('flex');
+        }
+        
+        function updatePomodoroDisplay() {
+            const timeLeftMs = pomodoroEndTime - Date.now();
+            if (timeLeftMs <= 0) {
+                // ¡Pomodoro terminado!
+                alertUser("¡Pomodoro completado! Tómate un descanso.", 'success');
+                stopPomodoro(true); // Detener y restaurar
+                return;
+            }
+            
+            const seconds = Math.floor((timeLeftMs / 1000) % 60);
+            const minutes = Math.floor((timeLeftMs / 1000 / 60) % 60);
+            pomodoroTimeLeft.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function stopPomodoro(restore = true) {
+            clearInterval(pomodoroInterval);
+            pomodoroInterval = null;
+            
+            // Ocultar UI del temporizador
+            pomodoroBtn.classList.remove('hidden');
+            pomodoroDisplay.classList.add('hidden');
+            pomodoroDisplay.classList.remove('flex');
+            
+            if (restore) {
+                // Restaurar playlist y canción originales
+                const original = pomodoroOriginalPlaylist;
+                if (original.id && original.trackIndex !== -1) {
+                    activePlaylistId = original.id;
+                    showTrackList(activePlaylistId);
+                    loadTrack(original.trackIndex);
+                    // No le damos a play, solo pausamos
+                    pauseAudio(); 
+                } else {
+                    // Si no había nada sonando, pausar
+                    pauseAudio();
+                    updatePlayerDisplay(false);
+                }
+            }
+            // Si restore=false, simplemente se detiene (usado por alarmas)
+        }
+        
+        function updatePomodoroPlaylistOptions() {
+             pomodoroPlaylistSelect.innerHTML = '<option value="">-- Sin música --</option>';
+             allPlaylists.forEach(playlist => {
+                if (playlist.tracks.length > 0) {
+                    const option = document.createElement('option');
+                    option.value = playlist.id;
+                    option.textContent = playlist.name;
+                    pomodoroPlaylistSelect.appendChild(option);
+                }
+            });
+        }
+
+
+        // --- Utilidades ---
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function saveToLocalStorage() {
+            // Guardar datos de eventos y recuerdos. La playlist de archivos NO se guarda.
+            localStorage.setItem('musicEvents', JSON.stringify(events));
+            localStorage.setItem('musicRecurringEvents', JSON.stringify(recurringEvents));
+            localStorage.setItem('musicMemories', JSON.stringify(memories));
+        }
+        
+        function loadFromLocalStorage() {
+            events = JSON.parse(localStorage.getItem('musicEvents')) || {};
+            recurringEvents = JSON.parse(localStorage.getItem('musicRecurringEvents')) || {};
+            memories = JSON.parse(localStorage.getItem('musicMemories')) || {};
+        }
+
+        // --- Iniciar la App ---
+        window.onload = function() {
+            initApp();
+        }
+    </script>
+
+</body>
+</html>
