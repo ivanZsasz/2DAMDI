@@ -1,0 +1,2407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Viajeros - Edición Enciclopédica</title>
+    
+    <!-- 
+      CSS COMPLETO DE LA APLICACIÓN
+    -->
+    <style>
+        /* --- 1. Configuración Global y Variables de Tema --- */
+        :root {
+            /* Tema Claro (Default) */
+            --bg-color: #f4f7fa;
+            --text-color: #1a1a1a;
+            --card-bg: #ffffff;
+            --primary-accent: #007bff;
+            --secondary-accent: #6c757d;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --border-color: #e0e0e0;
+            --font-main: 'Arial', sans-serif;
+            --font-special: 'Georgia', serif;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+        }
+
+        [data-theme="dark"] {
+            /* Tema Oscuro */
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --primary-accent: #00aaff;
+            --secondary-accent: #a0a0a0;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --glass-bg: rgba(30, 30, 30, 0.7);
+            --border-color: #333;
+        }
+
+        [data-theme="cyber"] {
+            /* Tema Secreto "Cyberpunk" */
+            --bg-color: #0d0221;
+            --text-color: #00ffc3;
+            --card-bg: rgba(26, 7, 65, 0.6);
+            --primary-accent: #ff00ff;
+            --secondary-accent: #f9f871;
+            --shadow-color: rgba(255, 0, 255, 0.5);
+            --glass-bg: rgba(13, 2, 33, 0.6);
+            --border-color: #ff00ff;
+            
+            --neon-text-shadow: 0 0 3px var(--text-color), 0 0 5px var(--text-color), 0 0 8px var(--primary-accent);
+            --neon-box-shadow: 0 0 5px var(--primary-accent), 0 0 10px var(--primary-accent);
+            
+            --font-main: 'Courier New', Courier, monospace;
+            --font-special: 'Courier New', Courier, monospace;
+        }
+
+        /* --- 2. Estilos Base y Layout Principal --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 100%; /* Base */
+            transition: font-size 0.3s ease;
+        }
+        
+        /* --- 2.1 ESTILOS DE ACCESIBILIDAD --- */
+        html[data-font-size="large"] { font-size: 115%; }
+        html[data-font-size="extra"] { font-size: 130%; }
+        
+        html[data-motion="reduced"] *,
+        html[data-motion="reduced"] *::before,
+        html[data-motion="reduced"] *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+        
+        /* Fuente para Dislexia */
+        html[data-dyslexia="true"] body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Verdana', sans-serif !important;
+            line-height: 2;
+            letter-spacing: 0.08em;
+            word-spacing: 0.1em;
+        }
+        
+        /* Estilos visuales cuando el Modo Voz está activo */
+        html[data-voice="active"] body {
+            cursor: help; 
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden; 
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* Efecto "scanlines" para modo cyber */
+        [data-theme="cyber"] body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.3;
+            animation: scanlines 0.2s infinite linear;
+        }
+
+        @keyframes scanlines {
+            from { background-position: 0 0; }
+            to { background-position: 0 4px; }
+        }
+
+        /* --- 3. Barra Superior (Header) --- */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            transition: background-color 0.4s ease, border-color 0.4s ease, transform 0.5s ease;
+        }
+        
+        .main-header.hidden {
+            transform: translateY(-100%);
+        }
+        
+        [data-theme="cyber"] .main-header {
+            box-shadow: var(--neon-box-shadow);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-accent);
+            transition: color 0.4s ease;
+        }
+        
+        [data-theme="cyber"] .app-title {
+            text-shadow: var(--neon-text-shadow);
+            animation: flicker 1.5s infinite alternate;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative; 
+        }
+
+        .settings-toggle,
+        .theme-toggle {
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+            border-radius: 50%;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        .settings-toggle:hover,
+        .theme-toggle:hover {
+            transform: scale(1.2) rotate(15deg);
+            background-color: var(--shadow-color);
+        }
+        
+        .theme-toggle .icon { display: none; }
+        [data-theme="light"] .icon-sun { display: block; }
+        [data-theme="dark"] .icon-moon { display: block; }
+        [data-theme="cyber"] .icon-cyber { display: block; }
+
+        /* --- 3.5. Menú de Ajustes y Submenú --- */
+        .settings-menu {
+            position: absolute;
+            top: 100%; 
+            right: 0;
+            margin-top: 10px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            z-index: 200;
+            width: 240px;
+            padding: 10px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        .settings-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        [data-theme="cyber"] .settings-menu {
+            box-shadow: var(--neon-box-shadow);
+        }
+        
+        .settings-menu button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            text-align: left;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .settings-menu button:hover {
+            background-color: var(--shadow-color);
+            color: var(--primary-accent);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            margin-left: 10px;
+            border-left: 2px solid var(--border-color);
+            padding-left: 5px;
+            transition: max-height 0.3s ease;
+        }
+        
+        .submenu.open {
+            max-height: 300px;
+        }
+
+        .submenu button {
+            font-size: 0.85rem;
+            padding: 8px 10px;
+        }
+        
+        .menu-arrow {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .has-submenu.active .menu-arrow {
+            transform: rotate(90deg);
+        }
+        
+        .menu-status {
+            font-size: 0.75rem;
+            background: var(--shadow-color);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* --- 4. Contenedor Principal y Pantallas --- */
+        .main-container {
+            flex-grow: 1;
+            padding-top: 0;
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* --- CORRECCIÓN DEL ERROR DE CONGELAMIENTO --- */
+        .screen {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            padding-top: 100px;
+            overflow-y: auto;
+            padding-left: 30px;
+            padding-right: 30px;
+            padding-bottom: 30px;
+            
+            /* Estados por defecto: invisible y no interactivo */
+            opacity: 0;
+            visibility: hidden; /* CLAVE: Oculta el elemento del DOM visual */
+            transform: scale(0.95) rotateZ(-5deg);
+            pointer-events: none;
+            
+            /* Transición suave */
+            transition: 
+                opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), 
+                transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+                visibility 0.5s step-end; /* Espera a que acabe la opacidad para ocultar */
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible; /* CLAVE: Lo hace visible */
+            transform: scale(1) rotateZ(0deg);
+            pointer-events: all;
+            z-index: 10;
+            transition: 
+                opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), 
+                transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+                visibility 0s step-start; /* Visible inmediatamente */
+        }
+
+        /* --- 4.5 PANTALLA DE LOGIN --- */
+        #screen-login {
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-color) 0%, var(--card-bg) 100%);
+            z-index: 200;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        [data-theme="cyber"] .login-container {
+            box-shadow: var(--neon-box-shadow);
+            border-color: var(--primary-accent);
+        }
+
+        .login-logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            color: var(--primary-accent);
+            margin-bottom: 30px;
+            font-family: var(--font-special);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+        }
+        
+        .form-input.error {
+            border-color: var(--error-color);
+            animation: shake 0.3s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        [data-theme="cyber"] .login-btn {
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-accent);
+        }
+
+        .divider {
+            margin: 25px 0;
+            position: relative;
+            text-align: center;
+        }
+
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: var(--border-color);
+        }
+
+        .divider span {
+            background-color: var(--card-bg);
+            padding: 0 10px;
+            position: relative;
+            color: var(--secondary-accent);
+            font-size: 0.9rem;
+        }
+
+        .google-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+        
+        .google-btn:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* --- 4.7 PANTALLA DE RULETAS (NUEVO) --- */
+        #screen-roulette {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* CAMBIO AQUI: Cambiado de 'center' a 'flex-start' para que el contenido empiece desde arriba */
+            justify-content: flex-start; 
+            text-align: center;
+            background: radial-gradient(circle at center, var(--bg-color) 0%, var(--card-bg) 100%);
+            /* Eliminado z-index fijo para evitar bloqueos */
+        }
+
+        .roulette-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            /* CAMBIO AQUI: Margen superior adicional para separar del título */
+            margin-top: 20px; 
+        }
+
+        .roulette-box {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px var(--shadow-color);
+            opacity: 0.5;
+            pointer-events: none;
+            transition: opacity 0.5s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .roulette-box.active-wheel {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1.05);
+            border-color: var(--primary-accent);
+        }
+        
+        .roulette-box.completed {
+            opacity: 0.8;
+            border-color: var(--success-color);
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+
+        .wheel-display {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 8px solid var(--primary-accent);
+            margin: 10px auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            background: var(--bg-color);
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        /* Triangulito indicador */
+        .wheel-display::after {
+            content: "▼";
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--error-color);
+            font-size: 1.5rem;
+            z-index: 10;
+            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Elemento que gira */
+        .wheel-spinner {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            /* Un gradiente cónico para simular la ruleta visualmente */
+            background: conic-gradient(
+                #ffadad 0deg 60deg, 
+                #ffd6a5 60deg 120deg, 
+                #fdffb6 120deg 180deg, 
+                #caffbf 180deg 240deg, 
+                #9bf6ff 240deg 300deg, 
+                #a0c4ff 300deg 360deg
+            );
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+        
+        /* Texto centrado encima de la ruleta */
+        .wheel-text {
+            z-index: 5;
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 90%;
+        }
+
+        /* --- 5. Estilos del Dashboard --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 12px 25px var(--shadow-color);
+        }
+        
+        [data-theme="cyber"] .card {
+            box-shadow: var(--neon-box-shadow);
+        }
+        
+        [data-theme="cyber"] .card:hover {
+            box-shadow: 0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent), 0 0 30px var(--primary-accent);
+            border-color: var(--text-color);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            opacity: 0.8;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .card:hover .card-image {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .card-content {
+            padding: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-accent);
+            margin-bottom: 10px;
+        }
+        
+        .card-description {
+            font-size: 0.9rem;
+            color: var(--secondary-accent);
+        }
+
+        /* --- 6. Estilos de las Pantallas de Contenido --- */
+        .content-screen {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .content-screen h2 {
+            font-size: 2.5rem;
+            color: var(--primary-accent);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            font-family: var(--font-special);
+        }
+        
+        [data-theme="cyber"] .content-screen h2 {
+            text-shadow: var(--neon-text-shadow);
+        }
+
+        .content-box {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 3px 10px var(--shadow-color);
+        }
+        
+        [data-theme="cyber"] .content-box {
+            box-shadow: var(--neon-box-shadow);
+        }
+
+        /* Botón de Volver */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            background-color: var(--primary-accent);
+            color: var(--card-bg);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn:hover {
+            transform: translateX(-5px);
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+        
+        [data-theme="cyber"] .back-btn {
+            background-color: var(--primary-accent);
+            color: var(--bg-color);
+            box-shadow: var(--neon-box-shadow);
+            text-shadow: 0 0 3px var(--bg-color);
+        }
+        
+        [data-theme="cyber"] .back-btn:hover {
+            color: var(--primary-accent);
+            background-color: var(--text-color);
+        }
+
+        /* --- 7. Estilos Específicos --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .gallery-item {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            display: flex; 
+        }
+        
+        .gallery-item figure {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background-color: var(--card-bg);
+        }
+        
+        .gallery-item img {
+            flex-grow: 1; 
+            object-fit: cover;
+            width: 100%;
+            height: 200px; 
+        }
+
+        .gallery-item figcaption {
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--primary-accent);
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0; 
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .catalog-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .catalog-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .catalog-card h4 {
+            color: var(--primary-accent);
+            font-size: 1.3rem;
+        }
+
+        .map-container img {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* --- 8. Estilos del Modal --- */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary-accent);
+            cursor: pointer;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+        
+        .modal-close:hover {
+            transform: scale(1.1);
+            color: var(--primary-accent);
+        }
+
+        .modal-content h3 {
+            font-size: 2rem;
+            color: var(--primary-accent);
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .modal-description p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .modal-gallery {
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .modal-gallery img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+        
+        @media (min-width: 768px) {
+            .modal-body {
+                grid-template-columns: 300px 1fr; 
+            }
+            .modal-gallery {
+                order: -1; 
+            }
+        }
+        
+        /* --- 10. Estilos de Botones del Modal --- */
+        .modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px; 
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: var(--primary-accent);
+            color: var(--card-bg); 
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            flex-grow: 1; 
+            justify-content: center;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        
+        [data-theme="cyber"] .modal-btn {
+            color: var(--bg-color);
+            box-shadow: var(--neon-box-shadow);
+        }
+        
+        @media (min-width: 768px) {
+            .modal-btn {
+                flex-grow: 0; 
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- HEADER -->
+    <header class="main-header hidden" id="main-header">
+        <h1 class="app-title" id="app-title">Guía de Viajeros</h1>
+        
+        <div class="header-controls">
+            <!-- Botón de Ajustes -->
+            <button class="settings-toggle" id="settings-toggle" aria-label="Ajustes">⚙️</button>
+            
+            <!-- Botón de Tema -->
+            <button class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema">
+                <span class="icon icon-sun">☀️</span>
+                <span class="icon icon-moon">🌙</span>
+                <span class="icon icon-cyber">👾</span>
+            </button>
+            
+            <!-- Menú de Ajustes con Submenú Accesibilidad -->
+            <div class="settings-menu" id="settings-menu">
+                
+                <!-- Botón Principal de Accesibilidad -->
+                <button id="accessibility-menu-btn" class="has-submenu">
+                    Accesibilidad ♿ <span class="menu-arrow">▶</span>
+                </button>
+                
+                <!-- Submenú Desplegable -->
+                <div class="submenu" id="accessibility-submenu">
+                    <button id="toggle-font-size">
+                        Tamaño Texto <span class="menu-status" id="status-font-size">Normal</span>
+                    </button>
+                    <button id="toggle-motion">
+                        Animaciones <span class="menu-status" id="status-motion">On</span>
+                    </button>
+                    <button id="toggle-dyslexia">
+                        Fuente Dislexia <span class="menu-status" id="status-dyslexia">Off</span>
+                    </button>
+                    <button id="toggle-voice">
+                        Modo Voz <span class="menu-status" id="status-voice">Off</span>
+                    </button>
+                </div>
+
+                <button id="logout-btn" style="color: var(--error-color); border-top: 1px solid var(--border-color); margin-top: 5px;">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="main-container">
+
+        <!-- PANTALLA 0: LOGIN -->
+        <section class="screen active" id="screen-login">
+            <div class="login-container">
+                <div class="login-logo">🌍✈️</div>
+                <h2 class="login-title">Guía de Viajeros</h2>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" class="form-input" placeholder="tu@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">Iniciar Sesión</button>
+                </form>
+                
+                <div class="divider"><span>O</span></div>
+                
+                <button class="google-btn" id="google-login-btn">
+                    <!-- Icono SVG simple de Google -->
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.64 9.2c0-.63-.06-1.25-.17-1.84H9v3.48h4.84c-.2 1.14-.83 2.1-1.77 2.73v2.27h2.86c1.67-1.54 2.64-3.81 2.64-6.64z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.86-2.27c-.81.54-1.84.86-3.1.86-2.34 0-4.31-1.58-5.02-3.7H1.05v2.33C2.53 15.99 5.55 18 9 18z" fill="#34A853"/>
+                        <path d="M3.98 10.71c-.18-.54-.28-1.12-.28-1.71s.1-1.17.28-1.71V4.96H1.05C.38 6.29 0 7.79 0 9.38s.38 3.09 1.05 4.42l2.93-2.27z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0 5.55 0 2.53 2.01 1.05 4.96l2.93 2.27c.71-2.12 2.68-3.65 5.02-3.65z" fill="#EA4335"/>
+                    </svg>
+                    Continuar con Google
+                </button>
+            </div>
+        </section>
+
+        <!-- PANTALLA 0.5: RULETA MÁGICA -->
+        <section class="screen" id="screen-roulette">
+            <h2 style="margin-bottom: 20px; color: var(--primary-accent);">¡Elige tu Destino!</h2>
+            <p style="margin-bottom: 30px;">Gira las ruletas para descubrir tu próxima aventura.</p>
+            
+            <div class="roulette-wrapper">
+                
+                <!-- Ruleta 1: Países -->
+                <div class="roulette-box active-wheel" id="wheel-box-1">
+                    <h4>1. País</h4>
+                    <div class="wheel-display" id="wheel-1">
+                        <div class="wheel-spinner"></div>
+                        <span class="wheel-text" id="wheel-text-1">GIRAR</span>
+                    </div>
+                </div>
+
+                <!-- Ruleta 2: Comunidades -->
+                <div class="roulette-box" id="wheel-box-2">
+                    <h4>2. Comunidad</h4>
+                    <div class="wheel-display" id="wheel-2">
+                        <div class="wheel-spinner"></div>
+                        <span class="wheel-text" id="wheel-text-2">BLOQUEADO</span>
+                    </div>
+                </div>
+
+                <!-- Ruleta 3: Pueblos -->
+                <div class="roulette-box" id="wheel-box-3">
+                    <h4>3. Pueblo</h4>
+                    <div class="wheel-display" id="wheel-3">
+                        <div class="wheel-spinner"></div>
+                        <span class="wheel-text" id="wheel-text-3">BLOQUEADO</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PANTALLA 1: DASHBOARD (VALDEMORO) -->
+        <section class="screen" id="screen-dashboard" data-title="Guía: Valdemoro">
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-pueblo" data-title="Mi Pueblo">
+                    <img src="/img/ciempozuelosHistoria.jpg" alt="Vista de un pueblo" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏘️ Mi Pueblo</h3>
+                        <div class="card-description">Descubre la historia, los lugares turísticos y la gastronomía local.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-barrio" data-title="Mi Barrio">
+                    <img src="/img/ciempozuelosHistoria.jpg" alt="Vista de un barrio" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏙️ Mi Barrio</h3>
+                        <div class="card-description">Los mejores parques, tiendas y rincones secretos de la zona.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-instituto" data-title="Mi Instituto">
+                    <img src="/img/ciempozuelosHistoria.jpg" alt="Vista de un instituto" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏫 Centros Educativos</h3>
+                        <div class="card-description">Directorio de institutos y colegios de Valdemoro.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-transport" data-title="Cómo Visitar">
+                    <img src="/img/ciempozuelosHistoria.jpg" alt="Coche deportivo" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🚗 Cómo Visitar</h3>
+                        <div class="card-description">Guía de transporte: coches y motos para recorrer la zona.</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- PANTALLA: CIEMPOZUELOS (DASHBOARD) -->
+        <section class="screen" id="screen-ciempozuelos" data-title="Guía: Ciempozuelos">
+             <h2 style="text-align:center; margin-bottom:30px; display:none;">Bienvenido a Ciempozuelos</h2>
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-ciempozuelos-pueblo" data-title="Mi Pueblo">
+                    <img src="CiempozuelosInicio.jpg" alt="Vista de Ciempozuelos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏘️ Mi Pueblo</h3>
+                        <div class="card-description">Descubre la historia, la plaza de la Constitución y las Salinas.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-ciempozuelos-barrio" data-title="Mi Barrio">
+                    <img src="https://placehold.co/600x400/4682B4/FFFFFF?text=Barrios" alt="Barrios de Ciempozuelos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏙️ Mi Barrio</h3>
+                        <div class="card-description">Zonas como Cuevas, Belén o Parque Olimpia.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-ciempozuelos-instituto" data-title="Institutos">
+                    <img src="https://placehold.co/600x400/2E8B57/FFFFFF?text=Institutos" alt="Institutos Ciempozuelos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏫 Centros Educativos</h3>
+                        <div class="card-description">IES Juan Carlos I y Francisco Umbral.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-transport" data-title="Cómo Visitar">
+                    <img src="https://placehold.co/600x400/D2691E/FFFFFF?text=Transporte" alt="Coche deportivo" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🚗 Cómo Visitar</h3>
+                        <div class="card-description">Guía de transporte: coches y motos para recorrer la zona.</div>
+                    </div>
+                </article>
+            </div>
+             <div style="text-align:center; margin-top:30px;">
+                <button class="back-btn" onclick="location.reload()">🔄 Reiniciar Ruleta</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA: ARANJUEZ (DASHBOARD COMPLETO) -->
+        <section class="screen" id="screen-aranjuez" data-title="Guía: Aranjuez">
+             <h2 style="text-align:center; margin-bottom:30px; display:none;">Real Sitio de Aranjuez</h2>
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-aranjuez-pueblo" data-title="Real Sitio">
+                    <img src="/img/Curiosidades.jpg" alt="Palacio Real de Aranjuez" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏰 El Real Sitio</h3>
+                        <div class="card-description    ">Patrimonio de la Humanidad: Palacio, Jardines y el Tajo.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-aranjuez-barrio" data-title="Barrios y Naturaleza">
+                    <img src="/img/ciempozuelosHistoria.jpg" alt="Jardines del Príncipe" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🌳 Jardines y Barrios</h3>
+                        <div class="card-description">El Barrio de la Montaña, Las Aves y los Jardines históricos.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-aranjuez-instituto" data-title="Educación">
+                    <img src="https://placehold.co/600x400/4169E1/FFFFFF?text=Universidad" alt="Campus Aranjuez" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🎓 Centros y URJC</h3>
+                        <div class="card-description">Institutos históricos y el campus de la Rey Juan Carlos.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-transport" data-title="Cómo Visitar">
+                    <img src="https://placehold.co/600x400/D2691E/FFFFFF?text=Transporte" alt="Coche deportivo" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🚗 Cómo Visitar</h3>
+                        <div class="card-description">Guía de transporte: coches y motos para recorrer la zona.</div>
+                    </div>
+                </article>
+            </div>
+            <div style="text-align:center; margin-top:30px;">
+                <button class="back-btn" onclick="location.reload()">🔄 Reiniciar Ruleta</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA: MENU TRANSPORTE -->
+        <section class="screen content-screen" id="screen-transport">
+            <button class="back-btn" id="transport-back-btn">⬅️ Volver</button>
+            <h2>🚗 Elige tu Transporte</h2>
+            <p style="margin-bottom: 30px; font-size: 1.1rem;">Selecciona cómo prefieres moverte por la zona.</p>
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-transport-cars" data-title="En Coche">
+                    <img src="https://placehold.co/400x300/FF4500/FFFFFF?text=Coches" alt="Coches" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🚙 En Coche</h3>
+                        <div class="card-description">Deportivos, uso diario y todoterrenos.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-transport-motos" data-title="En Moto">
+                    <img src="https://placehold.co/400x300/2F4F4F/FFFFFF?text=Motos" alt="Motos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🏍️ En Moto</h3>
+                        <div class="card-description">Deportivas, scooters y cruiser.</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- PANTALLA: COCHES -->
+        <section class="screen content-screen" id="screen-transport-cars">
+            <button class="back-btn" data-target="screen-transport">⬅️ Volver a Transporte</button>
+            <h2>🚙 Catálogo de Coches</h2>
+            
+            <div class="content-box">
+                <h3>🏎️ Deportivos</h3>
+                <p>Para disfrutar de las carreteras secundarias de la Vega.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="car-sport-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/FF0000/FFFFFF?text=Ferrari+488" alt="Ferrari">
+                            <figcaption>Ferrari 488</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="car-sport-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/FFFF00/000000?text=Porsche+911" alt="Porsche">
+                            <figcaption>Porsche 911 GT3</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-box">
+                <h3>🚗 Uso Diario</h3>
+                <p>Comodidad y eficiencia para moverse entre pueblos.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="car-daily-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/808080/FFFFFF?text=Toyota+Corolla" alt="Toyota Corolla">
+                            <figcaption>Toyota Corolla Hybrid</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="car-daily-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/0000FF/FFFFFF?text=Ford+Focus" alt="Ford Focus">
+                            <figcaption>Ford Focus ST-Line</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-box">
+                <h3>🚙 Todoterrenos</h3>
+                <p>Ideales para los caminos rurales y cerros.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="car-suv-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/228B22/FFFFFF?text=Jeep+Wrangler" alt="Jeep Wrangler">
+                            <figcaption>Jeep Wrangler Rubicon</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="car-suv-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/000000/FFFFFF?text=Land+Rover" alt="Land Rover Defender">
+                            <figcaption>Land Rover Defender</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANTALLA: MOTOS -->
+        <section class="screen content-screen" id="screen-transport-motos">
+            <button class="back-btn" data-target="screen-transport">⬅️ Volver a Transporte</button>
+            <h2>🏍️ Catálogo de Motos</h2>
+            
+            <div class="content-box">
+                <h3>🏁 Deportivas</h3>
+                <p>Adrenalina pura en cada curva.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="moto-sport-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/FF0000/FFFFFF?text=Ducati+Panigale" alt="Ducati Panigale">
+                            <figcaption>Ducati Panigale V4</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="moto-sport-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/0000FF/FFFFFF?text=Yamaha+R1" alt="Yamaha R1">
+                            <figcaption>Yamaha YZF-R1</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-box">
+                <h3>🛵 Scooters</h3>
+                <p>La mejor opción para el tráfico urbano.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="moto-scooter-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/CCCCCC/000000?text=Vespa+GTS" alt="Vespa GTS">
+                            <figcaption>Vespa GTS 300</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="moto-scooter-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/000000/FFFFFF?text=Yamaha+TMAX" alt="Yamaha TMAX">
+                            <figcaption>Yamaha TMAX 560</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-box">
+                <h3>🛣️ Cruiser</h3>
+                <p>Para disfrutar del paisaje con estilo.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="moto-cruiser-1">
+                        <figure>
+                            <img src="https://placehold.co/300x200/000000/FFFFFF?text=Harley+Davidson" alt="Harley Davidson">
+                            <figcaption>Harley Davidson Iron 883</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="moto-cruiser-2">
+                        <figure>
+                            <img src="https://placehold.co/300x200/8B0000/FFFFFF?text=Indian+Scout" alt="Indian Scout">
+                            <figcaption>Indian Scout Bobber</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          SUB-PANTALLAS VALDEMORO
+        -->
+        <section class="screen content-screen" id="screen-pueblo">
+            <button class="back-btn" data-target="screen-dashboard">⬅️ Volver al Inicio</button>
+            <h2>🏘️ Descubre Valdemoro</h2>
+            <p style="margin-bottom: 30px; font-size: 1.1rem;">Explora los secretos, el pasado y los rincones de nuestra villa. Valdemoro es más que una ciudad dormitorio; es un enclave con siglos de historia.</p>
+            
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-pueblo-visitar" data-title="Qué Visitar">
+                    <img src="https://placehold.co/400x300/8B4513/FFFFFF?text=Turismo" alt="Qué Visitar" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📸 ¿Qué visitar?</h3>
+                        <div class="card-description">Guía detallada de monumentos, plazas históricas y la rica gastronomía local.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-pueblo-historia" data-title="Historia">
+                    <img src="https://placehold.co/400x300/556B2F/FFFFFF?text=Historia" alt="Historia" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📜 Historia</h3>
+                        <div class="card-description">Desde los asentamientos de la Edad del Hierro y el "Valle del Miro" hasta el Privilegio de Feria barroco.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-pueblo-curiosidades" data-title="Datos Curiosos">
+                    <img src="https://placehold.co/400x300/483D8B/FFFFFF?text=Curiosidades" alt="Datos Curiosos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🧐 Datos Curiosos</h3>
+                        <div class="card-description">Leyendas inquisitoriales, refranes populares y secretos ocultos en sus calles.</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-pueblo-visitar">
+            <button class="back-btn" data-target="screen-pueblo">⬅️ Volver a Valdemoro</button>
+            <h2>📸 Qué visitar en Valdemoro</h2>
+            <div class="content-box">
+                <h3>Un Paseo por la Historia</h3>
+                <p>Valdemoro no es solo una ciudad dormitorio; es una villa con un peso histórico monumental en el sur de Madrid. Su casco antiguo, declarado Bien de Interés Cultural, conserva la traza medieval y el esplendor barroco que le otorgaron los validos de la corte. Pasear por sus calles es retroceder al Siglo de Oro, donde la influencia de la Corte de Madrid transformó una pequeña villa agrícola en un centro de poder y comercio.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="plaza">
+                        <figure>
+                            <img src="https://placehold.co/300x300/8B4513/FFFFFF?text=Plaza+Constitución" alt="Plaza de la Constitución de Valdemoro">
+                            <figcaption>Plaza de la Constitución</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="iglesia">
+                        <figure>
+                            <img src="https://placehold.co/300x300/BC8F8F/FFFFFF?text=Iglesia+N.S.+Asunción" alt="Iglesia Nuestra Señora de la Asunción">
+                            <figcaption>Iglesia N.S. de la Asunción</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="fuente">
+                        <figure>
+                            <img src="https://placehold.co/300x300/708090/FFFFFF?text=Fuente+de+la+Villa" alt="Fuente de la Villa">
+                            <figcaption>Fuente de la Villa</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ermita">
+                        <figure>
+                            <img src="https://placehold.co/300x300/B0E0E6/000000?text=Ermita+del+Cristo" alt="Ermita del Cristo de la Salud">
+                            <figcaption>Ermita del Cristo de la Salud</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+            <div class="content-box">
+                <h3>El Barroco Madrileño</h3>
+                <p>La arquitectura de Valdemoro destaca por su sobriedad y elegancia. Edificios como la <strong>Casa de la Inquisición</strong>, con su portada de granito y escudos heráldicos, o el <strong>Convento de las Clarisas</strong>, fundado bajo el patronazgo del Duque de Lerma, marcan el carácter de una villa que fue parada obligatoria para reyes en su camino hacia Aranjuez. Estos monumentos no son meras piedras, sino testigos de intrigas palaciegas y fervor religioso.</p>
+            </div>
+            <div class="content-box">
+                <h3>Gastronomía: El Hornazo</h3>
+                <p>La visita no está completa sin probar el famoso <strong>Hornazo de Valdemoro</strong>. Es un bollo de masa brioche dulce, decorado con huevos duros, tradicional del Domingo de Resurrección. Esta tradición reúne a familias enteras en los parques y el campo para celebrar el fin de la Cuaresma, compartiendo este manjar que ha pasado de generación en generación.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-pueblo-historia">
+            <button class="back-btn" data-target="screen-pueblo">⬅️ Volver a Valdemoro</button>
+            <h2>📜 Historia de Valdemoro</h2>
+            <div class="content-box">
+                <h3>Orígenes y Disputas Territoriales</h3>
+                <p>La leyenda popular atribuye la fundación de Valdemoro a los musulmanes, quienes la habrían llamado <strong>"Valle del Miro"</strong>, quizás en referencia a un caudillo local o a las características del terreno. Sin embargo, los hallazgos arqueológicos en la zona de El Espartal sugieren asentamientos humanos estables desde la Edad del Hierro y una fuerte presencia romana. Tras la Reconquista cristiana, en el año 1190, se produjo un hecho clave: el rey Alfonso VIII de Castilla anexionó la villa al concejo de Segovia. Esto dio inicio a una larga y compleja disputa territorial con la ciudad de Madrid, que reclamaba estos terrenos como propios. Valdemoro se convirtió así en una "isla" segoviana en territorio madrileño durante siglos, marcando su carácter fronterizo.</p>
+            </div>
+            <div class="content-box">
+                <h3>El Siglo de Oro y el Privilegio de Feria</h3>
+                <p>El momento de mayor esplendor llegó en el siglo XVII, cuando el <strong>Duque de Lerma</strong>, valido todopoderoso del rey Felipe III, compró la villa en 1602. Lerma tenía un plan ambicioso: convertir Valdemoro en un centro de ocio y comercio para la corte en su camino hacia Aranjuez. Gracias a su inmensa influencia, consiguió que el rey otorgara a Valdemoro el <strong>Privilegio de Feria</strong> en 1603. Este privilegio permitía celebrar un gran mercado franco anual donde se vendían productos de lujo, paños, ganado y joyas sin pagar impuestos, atrayendo a mercaderes de toda la península y reactivando la economía local de manera espectacular.</p>
+            </div>
+            <div class="content-box">
+                <h3>El Colegio de Guardias Jóvenes y el Tren</h3>
+                <p>El siglo XIX trajo dos hitos que definen el Valdemoro moderno. En 1851, la reina Isabel II inauguró la línea férrea <strong>Madrid-Aranjuez</strong>, la segunda de la península, haciendo parada en Valdemoro y conectándola definitivamente con la capital. Pocos años después, en 1855, se estableció el <strong>Colegio de Guardias Jóvenes "Duque de Ahumada"</strong>. Esta institución, destinada a la formación de los hijos de los guardias civiles (conocidos como "polillas"), ha creado un vínculo indisoluble entre el cuerpo de la Guardia Civil y la ciudad, influyendo en su demografía, sus fiestas y su identidad social hasta el día de hoy.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-pueblo-curiosidades">
+            <button class="back-btn" data-target="screen-pueblo">⬅️ Volver a Valdemoro</button>
+            <h2>🧐 Curiosidades y Leyendas</h2>
+            <div class="content-box">
+                <h3>"Entre Pinto y Valdemoro"</h3>
+                <p>Este es, sin duda, el dicho más famoso asociado a la localidad. Existen múltiples teorías sobre su origen. La más colorida cuenta la historia de un borracho que saltaba el arroyo que divide ambos pueblos gritando "¡Ahora estoy en Pinto, ahora en Valdemoro!", hasta que resbaló, cayó al agua y exclamó: "¡Ahora estoy entre Pinto y Valdemoro!". Otra versión, más histórica, sugiere que el rey Fernando III "El Santo" solía parar a descansar en un punto intermedio entre ambas villas, y cuando la corte preguntaba por él, se decía que estaba "entre Pinto y Valdemoro". También se habla de la calidad del vino: el de Pinto era regular y el de Valdemoro bueno, por lo que una calidad intermedia se quedaba "entre Pinto y Valdemoro".</p>
+            </div>
+            <div class="content-box">
+                <h3>La Hechicera de Valdemoro y la Inquisición</h3>
+                <p>En los archivos de la Inquisición se conserva el proceso de 1745 contra <strong>María Maeso</strong>, una vecina de Valdemoro acusada de hechicería. Se dice que María realizaba rituales adivinatorios en la noche de San Juan utilizando habas, plomo derretido y agua bendita para predecir el futuro de las jóvenes casaderas del pueblo. Su fama era tal que acudían a ella personas de toda la comarca. Fue denunciada por un vecino temeroso y procesada por el Santo Oficio, un episodio que nos recuerda la fuerte presencia eclesiástica y el control social de la época en la villa.</p>
+            </div>
+            <div class="content-box">
+                <h3>Un Plató de Western en el Sur de Madrid</h3>
+                <p>Pocos saben que Valdemoro fue un "Hollywood" a la española. Los paisajes yesíferos y áridos de los alrededores, especialmente en la zona de los barrancos, sirvieron de escenario perfecto para numerosos <strong>Spaghetti Westerns</strong> en las décadas de 1960 y 1970. Directores italianos y españoles encontraron aquí la luz y el terreno ideales para simular el lejano oeste americano o los desiertos mexicanos, ahorrando costes de viaje. Grandes actores cabalgaron por los cerros de Valdemoro persiguiendo forajidos ficticios.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-barrio">
+            <button class="back-btn" data-target="screen-dashboard">⬅️ Volver al Inicio</button>
+            <h2>🏙️ Mi Barrio: La Estación</h2>
+            <div class="content-box">
+                <h3>Historia sobre Rieles</h3>
+                <p>El Barrio de la Estación es el motor histórico del crecimiento industrial de Valdemoro. Surgió a mediados del siglo XIX ligado a la llegada del ferrocarril en 1851. Lo que antes eran campos de cultivo y yeseras se transformó en un núcleo de actividad frenética, con fábricas y almacenes que aprovechaban la conexión directa con la capital.</p>
+            </div>
+            <div class="content-box">
+                <h3>Puntos de Interés</h3>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="estacion">
+                        <figure>
+                            <img src="https://placehold.co/300x200/708090/FFFFFF?text=Estación+de+Tren" alt="Estación de Cercanías Valdemoro">
+                            <figcaption>La Estación de Tren</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="cerro">
+                        <figure>
+                            <img src="https://placehold.co/300x200/228B22/FFFFFF?text=Cerro+del+Castillo" alt="Parque Cerro del Castillo">
+                            <figcaption>Parque Cerro del Castillo</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-instituto">
+            <button class="back-btn" data-target="screen-dashboard">⬅️ Volver al Inicio</button>
+            <h2>🏫 Centros Educativos de Valdemoro</h2>
+            <div class="content-box">
+                <h3>Oferta Educativa Pública (IES)</h3>
+                <p>Valdemoro cuenta con una red de institutos públicos de alta calidad que ofrecen desde educación secundaria obligatoria hasta ciclos formativos de grado superior y bachillerato de excelencia. Aquí puedes encontrar los detalles de contacto y la oferta de cada uno.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="ies-villa">
+                        <figure>
+                            <img src="https://placehold.co/300x200/2E8B57/FFFFFF?text=IES+Villa+de+Valdemoro" alt="IES Villa de Valdemoro">
+                            <figcaption>IES Villa de Valdemoro</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ies-avalon">
+                        <figure>
+                            <img src="https://placehold.co/300x200/9370DB/FFFFFF?text=IES+Avalón" alt="IES Avalón">
+                            <figcaption>IES Avalón</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ies-matias">
+                        <figure>
+                            <img src="https://placehold.co/300x200/4682B4/FFFFFF?text=IES+Matías+Bravo" alt="IES Maestro Matías Bravo">
+                            <figcaption>IES Maestro Matías Bravo</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ies-neil">
+                        <figure>
+                            <img src="https://placehold.co/300x200/CD5C5C/FFFFFF?text=IES+Neil+Armstrong" alt="IES Neil Armstrong">
+                            <figcaption>IES Neil Armstrong</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          SUB-PANTALLAS CIEMPOZUELOS
+        -->
+        <section class="screen content-screen" id="screen-ciempozuelos-pueblo">
+            <button class="back-btn" data-target="screen-ciempozuelos">⬅️ Volver a Ciempozuelos</button>
+            <h2>🏘️ Descubre Ciempozuelos</h2>
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-ciempozuelos-pueblo-visitar" data-title="Qué Visitar">
+                    <img src="https://placehold.co/400x300/8B4513/FFFFFF?text=Turismo" alt="Qué Visitar" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📸 ¿Qué visitar?</h3>
+                        <div class="card-description">Monumentos históricos y parajes naturales únicos como las Salinas.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-ciempozuelos-pueblo-historia" data-title="Historia">
+                    <img src="https://placehold.co/400x300/556B2F/FFFFFF?text=Historia" alt="Historia" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📜 Historia</h3>
+                        <div class="card-description">De la romana Ischadia a los Cien Pozos que dan nombre a la villa.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-ciempozuelos-pueblo-curiosidades" data-title="Datos Curiosos">
+                    <img src="https://placehold.co/400x300/483D8B/FFFFFF?text=Curiosidades" alt="Datos Curiosos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🧐 Datos Curiosos</h3>
+                        <div class="card-description">La cuna de Ventura Rodríguez y leyendas locales fascinantes.</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-ciempozuelos-pueblo-visitar">
+            <button class="back-btn" data-target="screen-ciempozuelos-pueblo">⬅️ Volver al Menú</button>
+            <h2>📸 Qué visitar en Ciempozuelos</h2>
+            <div class="content-box">
+                <h3>Patrimonio Histórico y Natural</h3>
+                <p>Ciempozuelos sorprende por la riqueza de su patrimonio. Desde plazas castellanas llenas de vida hasta entornos naturales únicos en la Comunidad de Madrid, la oferta turística es variada y profunda.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="ciem-plaza">
+                        <figure>
+                            <img src="https://placehold.co/300x300/8B4513/FFFFFF?text=Plaza+Constitución" alt="Plaza de la Constitución">
+                            <figcaption>Plaza de la Constitución</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ciem-iglesia">
+                        <figure>
+                            <img src="https://placehold.co/300x300/BC8F8F/FFFFFF?text=Iglesia+Magdalena" alt="Parroquia Santa María Magdalena">
+                            <figcaption>Iglesia Sta. María Magdalena</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ciem-salinas">
+                        <figure>
+                            <img src="https://placehold.co/300x300/708090/FFFFFF?text=Salinas+Espartinas" alt="Salinas de Espartinas">
+                            <figcaption>Salinas de Espartinas</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ciem-convento">
+                        <figure>
+                            <img src="https://placehold.co/300x300/B0E0E6/000000?text=Convento+Clarisas" alt="Convento de las Clarisas">
+                            <figcaption>Convento de las Clarisas</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-ciempozuelos-pueblo-historia">
+            <button class="back-btn" data-target="screen-ciempozuelos-pueblo">⬅️ Volver al Menú</button>
+            <h2>📜 Historia de Ciempozuelos</h2>
+            <div class="content-box">
+                <h3>De Ischadia a Roma</h3>
+                <p>Los orígenes de Ciempozuelos se pierden en la prehistoria, con importantes yacimientos arqueológicos en la zona. Sin embargo, se cree que el primer asentamiento estable de gran relevancia fue romano, conocido en las fuentes clásicas como <strong>Ischadia</strong>. Las excavaciones han revelado restos de villas rústicas y cerámicas de "terra sigillata" que atestiguan la importancia agrícola de esta zona fértil cerca del río Jarama para el abastecimiento del Imperio Romano en el centro de la península.</p>
+            </div>
+            <div class="content-box">
+                <h3>El Origen del Nombre: "Cien Pozuelos"</h3>
+                <p>El nombre actual de la localidad proviene de la Edad Media y es puramente descriptivo. Ante la necesidad de garantizar el abastecimiento de agua para una población creciente y para la agricultura, los habitantes excavaron numerosos pozos pequeños o "pozuelos" para acceder a los ricos acuíferos subterráneos del valle del Jarama. Con el tiempo, la abundancia de estos manantiales artificiales dio nombre a la aldea: "Cien-Pozuelos", que terminaría derivando en el actual Ciempozuelos. En el escudo de la villa aún se representan estos pozos como símbolo de identidad.</p>
+            </div>
+            <div class="content-box">
+                <h3>Tradición Sanitaria y Psiquiátrica</h3>
+                <p>En el siglo XIX, Ciempozuelos experimentó una transformación radical que marcaría su identidad moderna. En 1877, el Padre Benito Menni fundó el <strong>Hospital Psiquiátrico de San Juan de Dios</strong>, y poco después se estableció el centro de las Hermanas Hospitalarias del Sagrado Corazón de Jesús. Estas instituciones convirtieron a Ciempozuelos en la "ciudad de la salud mental" de España. Durante décadas, la economía y la vida social del pueblo giraron en torno a estos centros, que fueron pioneros en el tratamiento humanitario de las enfermedades mentales y dieron trabajo a gran parte de la población local.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-ciempozuelos-pueblo-curiosidades">
+            <button class="back-btn" data-target="screen-ciempozuelos-pueblo">⬅️ Volver al Menú</button>
+            <h2>🧐 Curiosidades</h2>
+            <div class="content-box">
+                <h3>La Cuna del Arquitecto de Madrid</h3>
+                <p>Pocos saben que el arquitecto que definió la imagen neoclásica de Madrid nació en Ciempozuelos. En 1717 vino al mundo <strong>Ventura Rodríguez</strong>, hijo de un modesto albañil local. Gracias a su talento descomunal, llegó a ser el arquitecto más influyente del siglo XVIII español. Fue el diseñador de obras maestras icónicas como las fuentes de <strong>Cibeles, Neptuno y Apolo</strong> en el Paseo del Prado de Madrid, además de remodelar la Basílica del Pilar en Zaragoza. Su estatua preside hoy la plaza principal de su pueblo natal.</p>
+            </div>
+            <div class="content-box">
+                <h3>Toros de Fuego</h3>
+                <p>Una de las tradiciones más singulares y espectaculares de Ciempozuelos son los "Toros de Fuego", que se celebran durante las fiestas patronales de la Virgen del Consuelo en septiembre. No son animales reales, sino armazones metálicos con forma de toro cargados de pirotecnia que son transportados por corredores. Estos "toros" recorren la Plaza de la Constitución soltando chispas y buscapiés, creando un espectáculo de luz, ruido y adrenalina que es único en la Comunidad de Madrid y atrae a visitantes de toda la región.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-ciempozuelos-barrio">
+            <button class="back-btn" data-target="screen-ciempozuelos">⬅️ Volver a Ciempozuelos</button>
+            <h2>🏙️ Barrios de Ciempozuelos</h2>
+            <div class="content-box">
+                <h3>Zonas Destacadas</h3>
+                <div class="gallery-grid">
+                      <div class="gallery-item" data-poi-id="barrio-cuevas">
+                        <figure>
+                            <img src="https://placehold.co/300x200/A0522D/FFFFFF?text=Barrio+de+las+Cuevas" alt="Barrio de las Cuevas">
+                            <figcaption>Barrio de las Cuevas</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="barrio-olimpia">
+                        <figure>
+                            <img src="https://placehold.co/300x200/228B22/FFFFFF?text=Parque+Olimpia" alt="Zona Parque Olimpia">
+                            <figcaption>Parque Olimpia</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-ciempozuelos-instituto">
+            <button class="back-btn" data-target="screen-ciempozuelos">⬅️ Volver a Ciempozuelos</button>
+            <h2>🏫 Institutos de Ciempozuelos</h2>
+            <div class="content-box">
+                <h3>Oferta Educativa Pública</h3>
+                <p>La educación en Ciempozuelos se vertebra a través de dos grandes institutos públicos que cubren las necesidades de la población local y de municipios cercanos, ofreciendo una formación integral y datos de contacto detallados a continuación.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="ies-juancarlos">
+                        <figure>
+                            <img src="https://placehold.co/300x200/4682B4/FFFFFF?text=IES+Juan+Carlos+I" alt="IES Juan Carlos I">
+                            <figcaption>IES Juan Carlos I</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="ies-umbral">
+                        <figure>
+                            <img src="https://placehold.co/300x200/CD5C5C/FFFFFF?text=IES+Francisco+Umbral" alt="IES Francisco Umbral">
+                            <figcaption>IES Francisco Umbral</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUB-PANTALLAS ARANJUEZ -->
+        <section class="screen content-screen" id="screen-aranjuez-pueblo">
+            <button class="back-btn" data-target="screen-aranjuez">⬅️ Volver a Aranjuez</button>
+            <h2>🏰 Descubre el Real Sitio</h2>
+            <p style="margin-bottom: 30px; font-size: 1.1rem;">Adéntrate en el Paisaje Cultural de Aranjuez, declarado Patrimonio de la Humanidad por la UNESCO. Un lugar donde la naturaleza y la arquitectura real se funden en perfecta armonía.</p>
+            <div class="dashboard-grid">
+                <article class="card" data-target="screen-aranjuez-pueblo-visitar" data-title="Qué Visitar">
+                    <img src="https://placehold.co/400x300/B22222/FFFFFF?text=Monumentos" alt="Qué Visitar" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📸 ¿Qué visitar?</h3>
+                        <div class="card-description">El majestuoso Palacio Real, la exquisita Casa del Labrador y museos únicos.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-aranjuez-pueblo-historia" data-title="Historia">
+                    <img src="https://placehold.co/400x300/DAA520/FFFFFF?text=Historia+Real" alt="Historia" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">📜 Historia</h3>
+                        <div class="card-description">Reyes, intrigas, Motines históricos y el famoso Concierto de Aranjuez.</div>
+                    </div>
+                </article>
+                <article class="card" data-target="screen-aranjuez-pueblo-curiosidades" data-title="Datos Curiosos">
+                    <img src="https://placehold.co/400x300/FF69B4/FFFFFF?text=Fresas" alt="Datos Curiosos" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">🍓 Curiosidades</h3>
+                        <div class="card-description">El histórico Tren de la Fresa, leyendas del Tajo y anécdotas reales.</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-aranjuez-pueblo-visitar">
+            <button class="back-btn" data-target="screen-aranjuez-pueblo">⬅️ Volver al Menú</button>
+            <h2>📸 Joyas de Aranjuez</h2>
+            <div class="content-box">
+                <h3>Patrimonio de la Humanidad</h3>
+                <p>Aranjuez es un museo al aire libre. Su trazado urbano y sus jardines son el ejemplo perfecto de la integración entre el paisaje natural del valle del Tajo y la intervención humana planificada por los reyes de España.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="aranjuez-palacio">
+                        <figure>
+                            <img src="https://placehold.co/300x300/8B0000/FFFFFF?text=Palacio+Real" alt="Palacio Real de Aranjuez">
+                            <figcaption>Palacio Real</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="aranjuez-jardin-principe">
+                        <figure>
+                            <img src="https://placehold.co/300x300/228B22/FFFFFF?text=Jardin+Principe" alt="Jardín del Príncipe">
+                            <figcaption>Jardín del Príncipe</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="aranjuez-casa-labrador">
+                        <figure>
+                            <img src="https://placehold.co/300x300/FFD700/000000?text=Casa+Labrador" alt="Casa del Labrador">
+                            <figcaption>Casa del Labrador</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="aranjuez-jardin-isla">
+                        <figure>
+                            <img src="https://placehold.co/300x300/20B2AA/FFFFFF?text=Jardin+Isla" alt="Jardín de la Isla">
+                            <figcaption>Jardín de la Isla</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-aranjuez-pueblo-historia">
+            <button class="back-btn" data-target="screen-aranjuez-pueblo">⬅️ Volver al Menú</button>
+            <h2>📜 Historia Real</h2>
+            <div class="content-box">
+                <h3>El Sueño de Felipe II</h3>
+                <p>Fue el rey Felipe II, el monarca más poderoso de su tiempo, quien se enamoró perdidamente de la belleza de este paraje. En 1560 nombró a Aranjuez "Real Sitio", prohibiendo el asentamiento de población civil para preservar su exclusividad. Su sueño era crear una villa de recreo inspirada en los ideales renacentistas italianos, donde la naturaleza estuviera domada por la geometría. Ordenó plantar miles de árboles traídos de las Indias y de toda Europa, creando los famosos sotos históricos, y canalizó el Tajo para regar sus jardines.</p>
+            </div>
+            <div class="content-box">
+                <h3>El Motín de Aranjuez: Cambio de Era</h3>
+                <p>La noche del 17 al 18 de marzo de 1808, Aranjuez dejó de ser solo un lugar de recreo para convertirse en el escenario de un hecho que cambió la historia de España. El pueblo, instigado por los partidarios del príncipe Fernando (futuro Fernando VII), asaltó el palacio del valido Manuel Godoy. El rey Carlos IV, temiendo por su vida, se vio obligado a abdicar en su hijo. Este levantamiento popular, conocido como el <strong>Motín de Aranjuez</strong>, marcó el fin del Antiguo Régimen en España y fue el preludio de la Guerra de la Independencia contra Napoleón. Hoy en día, este evento se recrea anualmente en unas fiestas declaradas de Interés Turístico Internacional.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-aranjuez-pueblo-curiosidades">
+            <button class="back-btn" data-target="screen-aranjuez-pueblo">⬅️ Volver al Menú</button>
+            <h2>🍓 Curiosidades</h2>
+            <div class="content-box">
+                <h3>El Tren de la Fresa y la Revolución Industrial</h3>
+                <p>En 1851, la reina Isabel II inauguró la línea de ferrocarril que unía Madrid con Aranjuez. Fue la segunda línea de la península ibérica (tras la de Barcelona-Mataró) y supuso una revolución tecnológica. Su objetivo principal era conectar el Palacio Real de Madrid con el Real Sitio de Aranjuez para los desplazamientos de la corte. Hoy en día, el legado de ese tren se mantiene vivo con el turístico <strong>Tren de la Fresa</strong>, un convoy de vagones de madera históricos donde azafatas vestidas de época reparten las famosas fresas de la huerta de Aranjuez a los viajeros.</p>
+            </div>
+            <div class="content-box">
+                <h3>La Inspiración de Joaquín Rodrigo</h3>
+                <p>El maestro ciego Joaquín Rodrigo compuso su obra más universal, el <strong>Concierto de Aranjuez</strong>, pensando en los jardines del Palacio Real. El segundo movimiento, el adagio, es mundialmente famoso por su melancolía y belleza. Rodrigo intentó capturar con su guitarra los sonidos de la naturaleza del jardín: el canto de los pájaros, el susurro de las hojas movidas por la brisa y, sobre todo, el fluir constante de las fuentes y del río Tajo. Es una obra que ha llevado el nombre de Aranjuez a todos los auditorios del planeta.</p>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-aranjuez-barrio">
+            <button class="back-btn" data-target="screen-aranjuez">⬅️ Volver a Aranjuez</button>
+            <h2>🌳 Barrios y Naturaleza</h2>
+            <div class="content-box">
+                <h3>Barrios Emblemáticos</h3>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="aranjuez-montana">
+                        <figure>
+                            <img src="https://placehold.co/300x200/808000/FFFFFF?text=La+Montaña" alt="Barrio de la Montaña">
+                            <figcaption>La Montaña</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="aranjuez-aves">
+                        <figure>
+                            <img src="https://placehold.co/300x200/4682B4/FFFFFF?text=Las+Aves" alt="Barrio de las Aves">
+                            <figcaption>Las Aves</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen content-screen" id="screen-aranjuez-instituto">
+            <button class="back-btn" data-target="screen-aranjuez">⬅️ Volver a Aranjuez</button>
+            <h2>🎓 Educación y Universidad</h2>
+            <div class="content-box">
+                <h3>Campus y Centros</h3>
+                <p>Aranjuez es una ciudad universitaria y educativa. Alberga un importante campus de la Universidad Rey Juan Carlos en edificios históricos y cuenta con institutos de gran tradición cuyos detalles puedes consultar a continuación.</p>
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-poi-id="aranjuez-alpajes">
+                        <figure>
+                            <img src="https://placehold.co/300x200/5F9EA0/FFFFFF?text=IES+Alpajés" alt="IES Alpajés">
+                            <figcaption>IES Alpajés</figcaption>
+                        </figure>
+                    </div>
+                    <div class="gallery-item" data-poi-id="aranjuez-scarlatti">
+                        <figure>
+                            <img src="https://placehold.co/300x200/D2691E/FFFFFF?text=IES+Scarlatti" alt="IES Domenico Scarlatti">
+                            <figcaption>IES Domenico Scarlatti</figcaption>
+                        </figure>
+                    </div>
+                     <div class="gallery-item" data-poi-id="aranjuez-urjc">
+                        <figure>
+                            <img src="https://placehold.co/300x200/B22222/FFFFFF?text=URJC+Aranjuez" alt="Campus URJC">
+                            <figcaption>Campus URJC</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- MODAL PARA PUNTOS DE INTERÉS (POI) -->
+    <div class="modal" id="poi-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="modal-close">&times;</span>
+            <h3 id="modal-title">Título del Lugar</h3>
+            <div class="modal-body">
+                <div class="modal-gallery" id="modal-gallery">
+                    <p><i>(Aquí podrás añadir tu galería de imágenes)</i></p>
+                    <img src="https://placehold.co/600x400/cccccc/000000?text=Tu+imagen+principal+aquí" alt="Imagen principal del lugar">
+                </div>
+                <div class="modal-description" id="modal-description">
+                    <!-- El contenido se inyectará desde JavaScript -->
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <a href="#" id="modal-directions-btn" class="modal-btn" target="_blank" rel="noopener noreferrer">🗺️ Cómo llegar</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const getEl = (id) => document.getElementById(id);
+
+            const themeToggleBtn = getEl('theme-toggle');
+            const appTitle = getEl('app-title');
+            const mainHeader = getEl('main-header');
+            const settingsToggle = getEl('settings-toggle');
+            const settingsMenu = getEl('settings-menu');
+            const logoutBtn = getEl('logout-btn');
+            const loginForm = getEl('login-form');
+            const emailInput = getEl('email');
+            const passInput = getEl('password');
+            const googleBtn = getEl('google-login-btn');
+            const screens = document.querySelectorAll('.screen');
+            const cards = document.querySelectorAll('.card');
+            const backBtns = document.querySelectorAll('.back-btn');
+
+            // --- Navegación ---
+            function showScreen(screenId, title) {
+                screens.forEach(screen => screen.classList.remove('active'));
+                const targetScreen = getEl(screenId);
+                if (targetScreen) {
+                    targetScreen.classList.add('active');
+                    if (appTitle) appTitle.textContent = title;
+                    if (mainHeader) {
+                        if (screenId === 'screen-login') {
+                            mainHeader.classList.add('hidden');
+                        } else {
+                            mainHeader.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const targetId = card.dataset.target; 
+                    const targetTitle = card.dataset.title; 
+                    showScreen(targetId, targetTitle);
+                });
+            });
+
+            // Configurar el botón de volver específico del transporte
+            const transportBackBtn = getEl('transport-back-btn');
+            if (transportBackBtn) {
+                transportBackBtn.addEventListener('click', () => {
+                    // Por defecto vuelve a Valdemoro, pero idealmente sabríamos de dónde vino
+                    // Como simplificación, vuelve al Dashboard principal (Valdemoro)
+                    showScreen('screen-dashboard', 'Guía: Valdemoro');
+                });
+            }
+
+            backBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const currentScreenId = btn.closest('.screen').id;
+                    
+                    // Lógica Valdemoro
+                    if (currentScreenId.startsWith('screen-pueblo-')) {
+                         showScreen('screen-pueblo', 'Descubre Valdemoro');
+                    } 
+                    // Lógica Ciempozuelos
+                    else if (currentScreenId.startsWith('screen-ciempozuelos-pueblo-')) {
+                         showScreen('screen-ciempozuelos-pueblo', 'Descubre Ciempozuelos');
+                    }
+                    else if (currentScreenId.startsWith('screen-ciempozuelos-')) { 
+                         showScreen('screen-ciempozuelos', 'Guía: Ciempozuelos');
+                    }
+                    else if (currentScreenId === 'screen-ciempozuelos-pueblo') {
+                         showScreen('screen-ciempozuelos', 'Guía: Ciempozuelos');
+                    }
+                    // Lógica Aranjuez
+                    else if (currentScreenId.startsWith('screen-aranjuez-pueblo-')) {
+                         showScreen('screen-aranjuez-pueblo', 'Descubre Aranjuez');
+                    }
+                    else if (currentScreenId.startsWith('screen-aranjuez-')) {
+                         showScreen('screen-aranjuez', 'Guía: Aranjuez');
+                    }
+                    else if (currentScreenId === 'screen-aranjuez-pueblo') {
+                         showScreen('screen-aranjuez', 'Guía: Aranjuez');
+                    }
+                    // Lógica Transporte
+                    else if (currentScreenId === 'screen-transport-cars' || currentScreenId === 'screen-transport-motos') {
+                        showScreen('screen-transport', 'Cómo Visitar');
+                    }
+                    else if (currentScreenId === 'screen-transport') {
+                        // Intenta volver al dashboard por defecto
+                        showScreen('screen-dashboard', 'Guía: Valdemoro');
+                    }
+                    // Lógica General
+                    else if (currentScreenId === 'screen-roulette' || currentScreenId === 'screen-dashboard' || currentScreenId === 'screen-aranjuez' || currentScreenId === 'screen-ciempozuelos') {
+                         showScreen('screen-roulette', 'Elige Destino');
+                    } else {
+                         showScreen('screen-dashboard', 'Guía: Valdemoro');
+                    }
+                });
+            });
+
+            // --- Login ---
+            function handleLogin(e) {
+                e.preventDefault(); 
+                const email = emailInput.value.trim();
+                const pass = passInput.value.trim();
+                let isValid = true;
+                if (!email) { emailInput.classList.add('error'); isValid = false; } else { emailInput.classList.remove('error'); }
+                if (!pass) { passInput.classList.add('error'); isValid = false; } else { passInput.classList.remove('error'); }
+                if (isValid) {
+                    localStorage.setItem('viajeros-logged-in', 'true');
+                    emailInput.value = ''; passInput.value = '';
+                    setupRoulettes();
+                    showScreen('screen-roulette', 'Elige Destino');
+                }
+            }
+            if(emailInput) emailInput.addEventListener('input', () => emailInput.classList.remove('error'));
+            if(passInput) passInput.addEventListener('input', () => passInput.classList.remove('error'));
+            if(loginForm) loginForm.addEventListener('submit', handleLogin);
+            if(googleBtn) googleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.setItem('viajeros-logged-in', 'true');
+                setupRoulettes();
+                showScreen('screen-roulette', 'Elige Destino');
+            });
+            if(logoutBtn) logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('viajeros-logged-in');
+                if(settingsMenu) settingsMenu.classList.remove('active');
+                showScreen('screen-login', 'Acceso');
+            });
+
+            // --- Temas ---
+            let lightToDarkCounter = 0; 
+            function applyTheme(theme) {
+                document.body.dataset.theme = theme;
+                localStorage.setItem('interactive-guide-theme', theme);
+            }
+            if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.body.dataset.theme;
+                let newTheme;
+                if (currentTheme === 'light') { newTheme = 'dark'; lightToDarkCounter++; } 
+                else if (currentTheme === 'dark') {
+                    if (lightToDarkCounter >= 3) { newTheme = 'cyber'; lightToDarkCounter = 0; } else { newTheme = 'light'; }
+                } else { newTheme = 'light'; lightToDarkCounter = 0; }
+                applyTheme(newTheme);
+            });
+
+            // --- Accesibilidad ---
+            const accessibilityMenuBtn = getEl('accessibility-menu-btn');
+            const accessibilitySubmenu = getEl('accessibility-submenu');
+            const toggleFontSizeBtn = getEl('toggle-font-size');
+            const toggleMotionBtn = getEl('toggle-motion');
+            const toggleDyslexiaBtn = getEl('toggle-dyslexia'); 
+            const toggleVoiceBtn = getEl('toggle-voice');        
+            const statusFontSize = getEl('status-font-size');
+            const statusMotion = getEl('status-motion');
+            const statusDyslexia = getEl('status-dyslexia'); 
+            const statusVoice = getEl('status-voice');       
+
+            const appSettings = {
+                fontSize: localStorage.getItem('setting-fontSize') || 'normal', 
+                motion: localStorage.getItem('setting-motion') || 'normal',      
+                dyslexia: localStorage.getItem('setting-dyslexia') || 'false',  
+                voice: localStorage.getItem('setting-voice') || 'false'          
+            };
+
+            function applySettings() {
+                const html = document.documentElement;
+                html.dataset.fontSize = appSettings.fontSize;
+                let sizeLabel = 'Normal';
+                if (appSettings.fontSize === 'large') sizeLabel = 'Grande';
+                if (appSettings.fontSize === 'extra') sizeLabel = 'Muy Grande';
+                if(statusFontSize) statusFontSize.textContent = sizeLabel;
+                
+                if (appSettings.motion === 'reduced') { html.dataset.motion = 'reduced'; if(statusMotion) statusMotion.textContent = 'Off'; } 
+                else { delete html.dataset.motion; if(statusMotion) statusMotion.textContent = 'On'; }
+                
+                if (appSettings.dyslexia === 'true') { html.dataset.dyslexia = 'true'; if(statusDyslexia) statusDyslexia.textContent = 'On'; } 
+                else { delete html.dataset.dyslexia; if(statusDyslexia) statusDyslexia.textContent = 'Off'; }
+                
+                if (appSettings.voice === 'true') { html.dataset.voice = 'active'; if(statusVoice) statusVoice.textContent = 'On'; } 
+                else { delete html.dataset.voice; if(statusVoice) statusVoice.textContent = 'Off'; window.speechSynthesis.cancel(); }
+
+                localStorage.setItem('setting-fontSize', appSettings.fontSize);
+                localStorage.setItem('setting-motion', appSettings.motion);
+                localStorage.setItem('setting-dyslexia', appSettings.dyslexia);
+                localStorage.setItem('setting-voice', appSettings.voice);
+            }
+
+            function speakText(text) {
+                if (!text) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES'; utterance.rate = 0.9; 
+                window.speechSynthesis.speak(utterance);
+            }
+
+            document.addEventListener('click', (e) => {
+                if (appSettings.voice !== 'true') return;
+                if (e.target.closest('.settings-menu') || e.target.closest('.header-controls')) return;
+                let textToRead = "";
+                const target = e.target;
+                if (target.tagName === 'IMG' && target.alt) { textToRead = "Imagen: " + target.alt; } 
+                else if (target.innerText && target.innerText.trim().length > 0) { textToRead = target.innerText; } 
+                else if (target.getAttribute('aria-label')) { textToRead = target.getAttribute('aria-label'); } 
+                else if (target.tagName === 'INPUT' && target.placeholder) { textToRead = "Campo de texto: " + target.placeholder; }
+                
+                if (!textToRead) {
+                    const parent = target.closest('button, a, .card, h1, h2, h3, p');
+                    if (parent) {
+                        if (parent.dataset.title) textToRead = parent.dataset.title; 
+                        else if (parent.getAttribute('aria-label')) textToRead = parent.getAttribute('aria-label');
+                        else textToRead = parent.innerText;
+                    }
+                }
+                if (textToRead) speakText(textToRead);
+            });
+
+            if(accessibilityMenuBtn) accessibilityMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); if(accessibilitySubmenu) accessibilitySubmenu.classList.toggle('open'); accessibilityMenuBtn.classList.toggle('active'); });
+            if(toggleFontSizeBtn) toggleFontSizeBtn.addEventListener('click', (e) => { e.stopPropagation(); if (appSettings.fontSize === 'normal') appSettings.fontSize = 'large'; else if (appSettings.fontSize === 'large') appSettings.fontSize = 'extra'; else appSettings.fontSize = 'normal'; applySettings(); });
+            if(toggleMotionBtn) toggleMotionBtn.addEventListener('click', (e) => { e.stopPropagation(); appSettings.motion = (appSettings.motion === 'normal') ? 'reduced' : 'normal'; applySettings(); });
+            if(toggleDyslexiaBtn) toggleDyslexiaBtn.addEventListener('click', (e) => { e.stopPropagation(); appSettings.dyslexia = (appSettings.dyslexia === 'false') ? 'true' : 'false'; applySettings(); });
+            if(toggleVoiceBtn) toggleVoiceBtn.addEventListener('click', (e) => { e.stopPropagation(); appSettings.voice = (appSettings.voice === 'false') ? 'true' : 'false'; applySettings(); if (appSettings.voice === 'true') speakText("Modo voz activado"); else speakText("Modo voz desactivado"); });
+            if(settingsToggle) settingsToggle.addEventListener('click', (e) => { e.stopPropagation(); if(settingsMenu) settingsMenu.classList.toggle('active'); });
+            document.addEventListener('click', (e) => { if (settingsMenu && !settingsMenu.contains(e.target) && e.target !== settingsToggle) { settingsMenu.classList.remove('active'); if(accessibilitySubmenu) accessibilitySubmenu.classList.remove('open'); if(accessibilityMenuBtn) accessibilityMenuBtn.classList.remove('active'); } });
+
+            // --- Ruletas ---
+            const roulettesData = {
+                countries: ["Francia", "Italia", "Portugal", "Alemania", "España", "Reino Unido", "Grecia"],
+                communities: ["Andalucía", "Cataluña", "Galicia", "Madrid", "País Vasco", "Valencia", "Castilla-La Mancha"],
+                towns: ["Fuenlabrada", "Getafe", "Aranjuez", "Valdemoro", "Ciempozuelos", "Pinto", "Seseña", "San Martín de la Vega"]
+            };
+            const wheel1 = getEl('wheel-1'), wheel2 = getEl('wheel-2'), wheel3 = getEl('wheel-3');
+            const box1 = getEl('wheel-box-1'), box2 = getEl('wheel-box-2'), box3 = getEl('wheel-box-3');
+            const text1 = getEl('wheel-text-1'), text2 = getEl('wheel-text-2'), text3 = getEl('wheel-text-3');
+
+            function spinWheel(element, textElement, options, riggedResult, callback) {
+                if (!element) return;
+                element.style.pointerEvents = 'none';
+                textElement.textContent = "GIRANDO...";
+                const randomSpin = 360 * 8 + Math.floor(Math.random() * 360);
+                element.querySelector('.wheel-spinner').style.transform = `rotate(${randomSpin}deg)`;
+                setTimeout(() => {
+                    textElement.textContent = riggedResult;
+                    element.parentElement.classList.remove('active-wheel');
+                    element.parentElement.classList.add('completed');
+                    if (callback) callback();
+                }, 4000);
+            }
+            function setupRoulettes() {
+                [box1, box2, box3].forEach(b => { if(b) { b.classList.remove('completed', 'active-wheel'); b.style.pointerEvents = 'none'; b.style.opacity = '0.5'; } });
+                if(box1) { box1.classList.add('active-wheel'); box1.style.opacity = '1'; box1.style.pointerEvents = 'all'; }
+                document.querySelectorAll('.wheel-spinner').forEach(s => s.style.transform = 'rotate(0deg)');
+                if(text1) text1.textContent = "GIRAR"; if(text2) text2.textContent = "ESPERA..."; if(text3) text3.textContent = "ESPERA...";
+            }
+            if(wheel1) wheel1.addEventListener('click', () => { spinWheel(wheel1, text1, roulettesData.countries, "España", () => { if(box2) { box2.classList.add('active-wheel'); box2.style.opacity = '1'; box2.style.pointerEvents = 'all'; text2.textContent = "GIRAR"; } }); });
+            if(wheel2) wheel2.addEventListener('click', () => { spinWheel(wheel2, text2, roulettesData.communities, "Madrid", () => { if(box3) { box3.classList.add('active-wheel'); box3.style.opacity = '1'; box3.style.pointerEvents = 'all'; text3.textContent = "GIRAR"; } }); });
+            if(wheel3) wheel3.addEventListener('click', () => {
+                const allowedTargets = ["Valdemoro", "Aranjuez", "Ciempozuelos"];
+                const finalDestiny = allowedTargets[Math.floor(Math.random() * allowedTargets.length)];
+                spinWheel(wheel3, text3, roulettesData.towns, finalDestiny, () => {
+                    setTimeout(() => {
+                        if (finalDestiny === "Valdemoro") showScreen('screen-dashboard', 'Guía: Valdemoro');
+                        else if (finalDestiny === "Aranjuez") showScreen('screen-aranjuez', 'Guía: Aranjuez');
+                        else if (finalDestiny === "Ciempozuelos") showScreen('screen-ciempozuelos', 'Guía: Ciempozuelos');
+                    }, 1000);
+                });
+            });
+
+            // --- Modal POI ---
+            const poiModal = getEl('poi-modal');
+            const modalClose = getEl('modal-close');
+            const modalTitle = getEl('modal-title');
+            const modalDescription = getEl('modal-description');
+            const modalDirectionsBtn = getEl('modal-directions-btn');
+
+            const poiData = {
+                // VEHICULOS - COCHES
+                "car-sport-1": { title: "Ferrari 488 GTB", description: "<p><strong>Motor:</strong> V8 Turbo de 3.9L</p><p><strong>Potencia:</strong> 670 CV</p><p>El compañero ideal para las rutas rápidas hacia Aranjuez. Su diseño aerodinámico y su rugido inconfundible harán que no pases desapercibido en la Plaza de la Mariblanca.</p>" },
+                "car-sport-2": { title: "Porsche 911 GT3", description: "<p><strong>Motor:</strong> Bóxer atmosférico de 4.0L</p><p><strong>Potencia:</strong> 510 CV</p><p>Precisión alemana para las curvas de la vega del Tajo. Un deportivo puro, perfecto para disfrutar de la conducción en carreteras secundarias.</p>" },
+                "car-daily-1": { title: "Toyota Corolla Hybrid", description: "<p><strong>Motor:</strong> Híbrido 1.8L</p><p><strong>Etiqueta:</strong> ECO</p><p>La opción inteligente para moverse por el centro urbano de Valdemoro y Ciempozuelos. Bajo consumo y facilidad de aparcamiento para el día a día.</p>" },
+                "car-daily-2": { title: "Ford Focus ST-Line", description: "<p><strong>Motor:</strong> EcoBoost 1.0L</p><p><strong>Estilo:</strong> Deportivo y práctico</p><p>Un compacto ágil y divertido. Ideal para llevar a la familia a los parques o hacer la compra sin renunciar a un tacto de conducción dinámico.</p>" },
+                "car-suv-1": { title: "Jeep Wrangler Rubicon", description: "<p><strong>Capacidad:</strong> 4x4 Extremo</p><p><strong>Terreno:</strong> Todo tipo</p><p>El rey de los caminos rurales. Perfecto para explorar los cerros de yeso de Valdemoro o acercarse a las Salinas de Espartinas sin miedo al barro.</p>" },
+                "car-suv-2": { title: "Land Rover Defender", description: "<p><strong>Lujo y Fuerza:</strong> Combinados</p><p><strong>Tecnología:</strong> Terrain Response</p><p>Un todoterreno icónico reinventado. Ofrece el máximo confort en carretera y una capacidad imparable fuera de ella. Ideal para excursiones familiares al campo.</p>" },
+
+                // VEHICULOS - MOTOS
+                "moto-sport-1": { title: "Ducati Panigale V4", description: "<p><strong>Cilindrada:</strong> 1103 cc</p><p><strong>Potencia:</strong> 214 CV</p><p>Una bestia de circuito homologada para la calle. Siente la adrenalina de MotoGP en tus rutas de fin de semana por el sur de Madrid.</p>" },
+                "moto-sport-2": { title: "Yamaha YZF-R1", description: "<p><strong>Tecnología:</strong> Crossplane</p><p><strong>ADN:</strong> Racing</p><p>Leyenda japonesa del motociclismo. Su agilidad y respuesta te permitirán trazar las curvas con precisión quirúrgica.</p>" },
+                "moto-scooter-1": { title: "Vespa GTS 300", description: "<p><strong>Estilo:</strong> Clásico Italiano</p><p><strong>Uso:</strong> Urbano</p><p>La elegancia sobre dos ruedas. Perfecta para aparcar en la puerta del Ayuntamiento o ir a tomar algo a la Plaza de la Constitución con estilo.</p>" },
+                "moto-scooter-2": { title: "Yamaha TMAX 560", description: "<p><strong>Concepto:</strong> Maxi-Scooter Deportivo</p><p><strong>Comodidad:</strong> Premium</p><p>Combina la comodidad de un scooter con las prestaciones de una moto deportiva. Ideal para ir a trabajar a Madrid o hacer escapadas rápidas.</p>" },
+                "moto-cruiser-1": { title: "Harley Davidson Iron 883", description: "<p><strong>Estilo:</strong> Dark Custom</p><p><strong>Sonido:</strong> Inconfundible</p><p>Para los amantes del 'viejo estilo'. Disfruta del paisaje y del sonido de su motor V-Twin en un paseo relajado hacia Aranjuez.</p>" },
+                "moto-cruiser-2": { title: "Indian Scout Bobber", description: "<p><strong>Diseño:</strong> Minimalista y agresivo</p><p><strong>Historia:</strong> Legendaria</p><p>Una cruiser con mucha personalidad. Su posición de conducción baja y su motor potente te harán sentir el dueño de la carretera.</p>" },
+
+                // VALDEMORO
+                "plaza": { 
+                    title: "Plaza de la Constitución (Valdemoro)", 
+                    maps_query: "Plaza de la Constitución, Valdemoro", 
+                    description: `
+                        <p>La <strong>Plaza de la Constitución</strong> es mucho más que el centro geográfico de Valdemoro; es el corazón palpitante de su vida social y cultural desde hace siglos. Esta plaza rectangular, porticada en la tradición castellana, es una joya arquitectónica que ha visto pasar la historia de la villa.</p>
+                        <p>Destaca en ella la <strong>Torre del Reloj</strong>, construida en 1672 por el arquitecto Francisco Granado. Su diseño en ladrillo y mampostería es un ejemplo clásico del barroco madrileño. Antiguamente, marcaba el ritmo de los jornaleros y los horarios de mercado. En los soportales, que protegen tanto del sol de verano como de la lluvia de invierno, se celebraban los mercados francos otorgados por Felipe III en 1603.</p>
+                        <p>Hoy en día, la plaza sigue siendo el lugar de encuentro por excelencia. Aquí se celebran los principales eventos festivos, como el pregón de las fiestas patronales en mayo y septiembre, ferias de artesanía y conciertos al aire libre. Sentarse en una de sus terrazas es disfrutar de un museo vivo.</p>
+                    ` 
+                },
+                "iglesia": { 
+                    title: "Iglesia Parroquial de N.S. de la Asunción", 
+                    maps_query: "Iglesia Parroquial de Nuestra Señora de la Asunción, Valdemoro", 
+                    description: `
+                        <p>La <strong>Iglesia Parroquial de Nuestra Señora de la Asunción</strong> es el edificio religioso más importante de Valdemoro y fue declarada Monumento Histórico Artístico en 1981. Su construcción abarca varios siglos, lo que le confiere una mezcla de estilos, aunque predomina el barroco madrileño del siglo XVII.</p>
+                        <p>Lo más impresionante de este templo se encuentra en su interior. Alberga un tesoro artístico de incalculable valor: tres lienzos de <strong>Francisco de Goya</strong> ("La aparición de la Virgen a San Julián") y de los hermanos Bayeu, cuñados del pintor aragonés. Estas obras fueron un encargo directo de la familia Pignatelli, condes de Fuentes, quienes fueron grandes mecenas de la villa.</p>
+                        <p>La nave central, de gran altura y luminosidad, conduce a un retablo mayor que, aunque sufrió daños en el pasado, sigue siendo imponente. La iglesia no solo es un lugar de culto, sino una galería de arte sacro de primer nivel en la Comunidad de Madrid.</p>
+                    ` 
+                },
+                "fuente": { 
+                    title: "Fuente de la Villa", 
+                    maps_query: "Fuente de la Villa, Valdemoro", 
+                    description: `
+                        <p>La <strong>Fuente de la Villa</strong> es uno de los monumentos civiles más antiguos y queridos de Valdemoro. Construida en 1605 con piedra de Colmenar, esta fuente fue vital para el desarrollo del municipio, ya que proporcionaba agua potable a los vecinos y servía de abrevadero para el ganado que transitaba por la cañada real.</p>
+                        <p>Está coronada por el escudo original de la villa, una pieza heráldica de gran valor histórico que representa los orígenes nobles del municipio. Cuenta con tres caños de bronce de los que, tradicionalmente, manaba agua de excelente calidad proveniente de los manantiales locales.</p>
+                        <p>Recientemente restaurada, la fuente ha recuperado su esplendor original. Situada cerca del lavadero municipal, forma un conjunto etnográfico que nos habla de la vida cotidiana de nuestros antepasados, cuando el agua no llegaba a las casas y la fuente era el principal punto de reunión social.</p>
+                    ` 
+                },
+                "ermita": { 
+                    title: "Ermita del Cristo de la Salud", 
+                    maps_query: "Ermita del Cristo de la Salud, Valdemoro", 
+                    description: `
+                        <p>La <strong>Ermita del Cristo de la Salud</strong> es el epicentro de la devoción popular en Valdemoro. Este edificio barroco, de planta de cruz latina y cúpula sobre pechinas, fue construido para albergar la imagen del patrón de la villa, el Santísimo Cristo de la Salud.</p>
+                        <p>Según la tradición, la devoción al Cristo se remonta a milagros atribuidos en épocas de peste y sequía. El interior de la ermita destaca por su decoración recargada, típica del barroco, con retablos dorados y frescos que narran escenas bíblicas. Es un espacio de silencio y recogimiento que contrasta con el bullicio exterior.</p>
+                        <p>Cada mes de mayo, la ermita se convierte en el centro de las fiestas patronales. Desde aquí parte la procesión que recorre las calles del pueblo, un evento que mezcla fe, tradición y cultura popular, atrayendo a miles de visitantes.</p>
+                    ` 
+                },
+                "estacion": { 
+                    title: "Estación de Tren Valdemoro", 
+                    maps_query: "Estación de Tren Valdemoro, Paseo de la Estación", 
+                    description: `
+                        <p>La <strong>Estación de Tren de Valdemoro</strong> no es una parada cualquiera; es un hito en la historia del transporte en España. Inaugurada en 1851 como parte de la línea Madrid-Aranjuez (la segunda de la península), su construcción marcó el inicio de la era industrial en el municipio.</p>
+                        <p>El edificio original de viajeros, aunque modificado con el tiempo, conserva el encanto de las estaciones del siglo XIX, con su arquitectura de ladrillo visto y marquesinas de hierro forjado. Alrededor de la estación creció el barrio homónimo, transformando Valdemoro de un pueblo agrícola a un nodo logístico e industrial.</p>
+                        <p>Hoy en día, la estación es una de las más transitadas de la línea C-3 de Cercanías, conectando a miles de valdemoreños con el centro de Madrid en apenas 30 minutos. Es el símbolo del dinamismo y la conexión de Valdemoro con el resto de la región.</p>
+                    ` 
+                },
+                "cerro": { 
+                    title: "Parque Cerro del Castillo", 
+                    maps_query: "Parque Cerro del Castillo, Valdemoro", 
+                    description: `
+                        <p>El <strong>Parque Cerro del Castillo</strong> es el gran pulmón verde del centro de Valdemoro. Con más de 6 hectáreas de extensión, este parque ofrece un refugio natural con una gran variedad de especies arbóreas, incluyendo pinos, olivos y almendros.</p>
+                        <p>Su nombre proviene de la antigua fortaleza que se erigía en esta elevación, de la cual apenas quedan vestigios arqueológicos, pero cuya posición estratégica ofrece hoy unas vistas panorámicas inigualables de todo el municipio y de la vega del Jarama. Es el lugar perfecto para ver atardecer.</p>
+                        <p>El parque está equipado con zonas de juegos infantiles, áreas de picnic, circuitos biosaludables y una tirolina que hace las delicias de los más pequeños. Es el escenario habitual de eventos deportivos, cines de verano y actividades medioambientales.</p>
+                    ` 
+                },
+                "ies-villa": { 
+                    title: "IES Villa de Valdemoro", 
+                    maps_query: "Calle Herencia 6C, Valdemoro, Madrid", 
+                    description: `
+                        <p>El <strong>IES Villa de Valdemoro</strong> es uno de los centros educativos con mayor solera del municipio. Situado en la zona de El Restón, este instituto se ha consolidado como un referente académico por su compromiso con la excelencia y la inclusión.</p>
+                        <p><strong>Dirección:</strong> Calle Herencia, 6C, 28341 Valdemoro, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 801 84 90<br>
+                        <strong>Email:</strong> ies.villadevaldemoro.valdemoro@educa.madrid.org</p>
+                        <p>Ofrece una amplia oferta educativa que abarca toda la Educación Secundaria Obligatoria (ESO) y diversas modalidades de Bachillerato, incluyendo Ciencias y Humanidades. Sus instalaciones cuentan con laboratorios modernos, biblioteca y pistas polideportivas que fomentan el desarrollo integral del alumno.</p>
+                        <p>El centro destaca por su participación en programas europeos como Erasmus+ y por sus proyectos de innovación tecnológica, preparando a sus estudiantes para un mundo globalizado.</p>
+                    ` 
+                },
+                "ies-avalon": { 
+                    title: "IES Avalón", 
+                    maps_query: "Calle Dalí 50, Valdemoro", 
+                    description: `
+                        <p>El <strong>IES Avalón</strong> es un centro moderno y dinámico, conocido especialmente por su fuerte apuesta por la Formación Profesional (FP). Ubicado en una zona de expansión, su arquitectura contemporánea refleja su enfoque innovador en la enseñanza.</p>
+                        <p><strong>Dirección:</strong> Calle Dalí, 50, 28342 Valdemoro, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 088 03 99<br>
+                        <strong>Email:</strong> ies.avalon.valdemoro@educa.madrid.org</p>
+                        <p>Además de la ESO y el Bachillerato, el Avalón es el centro de referencia para aquellos que buscan formación técnica especializada. Imparte ciclos formativos de Grado Medio y Superior en familias profesionales como Administración, Informática y Comercio, con una alta tasa de inserción laboral gracias a sus convenios con empresas locales.</p>
+                        <p>El instituto promueve activamente el emprendimiento entre sus alumnos, organizando ferias de empleo y talleres de creación de empresas.</p>
+                    ` 
+                },
+                "ies-matias": { 
+                    title: "IES Maestro Matías Bravo", 
+                    maps_query: "21 Av. del Mar Egeo Valdemoro, Comunidad de Madrid", 
+                    description: `
+                        <p>El <strong>IES Maestro Matías Bravo</strong> rinde homenaje con su nombre a una figura clave de la educación local. Este instituto se caracteriza por su ambiente acogedor y su enfoque en la atención personalizada al alumnado.</p>
+                        <p><strong>Dirección:</strong> Av. del Mar Egeo, 21, 28341 Valdemoro, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 801 80 44<br>
+                        <strong>Email:</strong> ies.matiasbravo.valdemoro@educa.madrid.org</p>
+                        <p>Es un centro bilingüe (inglés-español) que ha sabido integrar la enseñanza de idiomas en todas las áreas del conocimiento. Sus estudiantes participan regularmente en intercambios internacionales y concursos de debate, fomentando el pensamiento crítico y la oratoria.</p>
+                        <p>Las instalaciones incluyen aulas digitalizadas, un huerto escolar cuidado por los propios alumnos y espacios dedicados a las artes escénicas, demostrando que la educación va más allá de los libros de texto.</p>
+                    ` 
+                },
+                "ies-neil": { 
+                    title: "IES Neil Armstrong", 
+                    maps_query: "Ronda de San Sebastián 10, Valdemoro", 
+                    description: `
+                        <p>El <strong>IES Neil Armstrong</strong> toma su nombre del primer hombre que pisó la luna, y como él, aspira a que sus alumnos lleguen alto. Es uno de los institutos más grandes y completos de Valdemoro, situado estratégicamente cerca del centro urbano.</p>
+                        <p><strong>Dirección:</strong> Ronda de San Sebastián, 10, 28341 Valdemoro, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 801 90 61<br>
+                        <strong>Email:</strong> ies.neilarmstrong.valdemoro@educa.madrid.org</p>
+                        <p>Destaca por su programa de bilingüismo y por ser pionero en la integración de las TIC (Tecnologías de la Información y la Comunicación) en el aula. El centro apuesta fuertemente por las metodologías activas, donde el alumno es el protagonista de su propio aprendizaje.</p>
+                        <p>Además de su excelencia académica, el Neil Armstrong es conocido por su vibrante vida extracurricular, con clubes de teatro, ciencia y deporte que dinamizan la comunidad escolar y fomentan valores de compañerismo y superación.</p>
+                    ` 
+                },
+                
+                // CIEMPOZUELOS
+                "ciem-plaza": { 
+                    title: "Plaza de la Constitución (Ciempozuelos)", 
+                    maps_query: "Plaza de la Constitución, Ciempozuelos", 
+                    description: `
+                        <p>La <strong>Plaza de la Constitución</strong> de Ciempozuelos es el ágora donde converge la vida del municipio. Presidida por el edificio del Ayuntamiento, de estilo neomudéjar con su característico reloj, es un espacio amplio y luminoso reformado para el disfrute del peatón.</p>
+                        <p>En el centro de la plaza se alza la estatua de su hijo más ilustre, el arquitecto <strong>Ventura Rodríguez</strong>, recordando a todos los vecinos el legado artístico de la villa. La plaza está rodeada de cafés y comercios tradicionales que mantienen vivo el comercio local.</p>
+                        <p>Durante las fiestas patronales de septiembre en honor a la Virgen del Consuelo, la plaza se transforma en el escenario principal de conciertos, verbenas y los famosos "Toros de Fuego", una tradición pirotécnica única en la zona que ilumina las noches festivas.</p>
+                    ` 
+                },
+                "ciem-iglesia": { 
+                    title: "Iglesia de Santa María Magdalena", 
+                    maps_query: "Iglesia de Santa María Magdalena, Ciempozuelos", 
+                    description: `
+                        <p>La <strong>Iglesia de Santa María Magdalena</strong> es un templo de majestuosas proporciones que domina el perfil urbano de Ciempozuelos. Construida principalmente en el siglo XVII, es un magnífico ejemplo del barroco madrileño, caracterizado por el uso del ladrillo y la mampostería en cajas.</p>
+                        <p>Su torre campanario es visible desde kilómetros de distancia, sirviendo de faro en la vega del Jarama. En su interior, de tres naves, se conservan retablos de gran calidad artística. Se especula con la autoría de un cuadro de Claudio Coello, pintor de cámara de Carlos II, lo que añadiría un valor incalculable a su patrimonio.</p>
+                        <p>La iglesia no solo es un centro espiritual, sino también un archivo histórico vivo, donde se guardan los registros de bautismos y matrimonios que permiten rastrear la genealogía de las familias de la comarca desde hace siglos.</p>
+                    ` 
+                },
+                "ciem-salinas": { 
+                    title: "Salinas de Espartinas", 
+                    maps_query: "Salinas de Espartinas, Ciempozuelos", 
+                    description: `
+                        <p>Las <strong>Salinas de Espartinas</strong> son un tesoro oculto y declarado Bien de Interés Cultural (BIC) en la categoría de Paisaje Cultural. Situadas en el barranco de las Salinas, representan una explotación de sal que ha estado activa desde la prehistoria hasta bien entrado el siglo XX.</p>
+                        <p>Este paraje posee un valor doble: histórico y ecológico. Históricamente, la sal era el "oro blanco", esencial para la conservación de alimentos, y estas salinas fueron una fuente de riqueza crucial. Aún se conservan las balsas de decantación y cristalización, así como las conducciones de madera originales.</p>
+                        <p>Ecológicamente, es un hábitat único para plantas halófilas (amantes de la sal), algunas de las cuales son endemismos muy raros en la Comunidad de Madrid. Es un lugar fascinante para pasear y comprender la dura vida de los salineros de antaño.</p>
+                    ` 
+                },
+                "ciem-convento": { 
+                    title: "Convento de las Clarisas", 
+                    maps_query: "Convento de las Clarisas, Ciempozuelos", 
+                    description: `
+                        <p>El <strong>Convento de las Hermanas Clarisas</strong>, fundado en el siglo XVII, es un remanso de paz en el centro de Ciempozuelos. Su arquitectura es sobria y conventual, diseñada para la vida de clausura y oración, con un claustro interior que es un jardín secreto desconocido para muchos.</p>
+                        <p>La iglesia del convento está abierta al culto y permite admirar la sencillez franciscana de su decoración. Sin embargo, lo que atrae a muchos visitantes no es solo la arquitectura, sino la repostería. Las monjas elaboran dulces artesanales siguiendo recetas centenarias: mantecados, perrunillas y magdalenas que se venden a través del torno, manteniendo viva una tradición deliciosa.</p>
+                        <p>Este edificio es un testimonio de la fuerte presencia de órdenes religiosas en Ciempozuelos, que le valió el sobrenombre de "la ciudad conventual" en el pasado.</p>
+                    ` 
+                },
+                "barrio-cuevas": { 
+                    title: "Barrio de las Cuevas", 
+                    maps_query: "Calle de las Cuevas, Ciempozuelos", 
+                    description: `
+                        <p>El <strong>Barrio de las Cuevas</strong> es el rincón más singular y antropológicamente interesante de Ciempozuelos. Históricamente, muchas familias humildes excavaron sus viviendas en la ladera de los cerros, aprovechando la geología del terreno para crear hogares bioclimáticos, frescos en verano y cálidos en invierno.</p>
+                        <p>Aunque muchas de estas cuevas-vivienda se perdieron o se transformaron en bodegas, aún quedan vestigios que nos hablan de una forma de vida subterránea muy extendida en la comarca del Tajuña y el Jarama. Pasear por estas calles empinadas y estrechas es descubrir el origen humilde y laborioso del pueblo.</p>
+                        <p>Hoy en día, se está trabajando para recuperar la memoria de este barrio, poniendo en valor la arquitectura popular y las historias de los vecinos que habitaron las entrañas de la tierra.</p>
+                    ` 
+                },
+                "barrio-olimpia": { 
+                    title: "Barrio Parque Olimpia", 
+                    maps_query: "Parque Olimpia, Ciempozuelos", 
+                    description: `
+                        <p>El <strong>Barrio del Parque Olimpia</strong> representa el Ciempozuelos moderno y residencial. Es una zona tranquila, ideal para familias, caracterizada por sus amplias avenidas, zonas verdes y edificaciones de baja altura que permiten disfrutar de un entorno despejado.</p>
+                        <p>El corazón del barrio es el propio Parque Olimpia, un espacio recreativo dotado de pistas deportivas, áreas de juegos infantiles y senderos para pasear. Es el lugar preferido por los vecinos para practicar deporte al aire libre o disfrutar de las tardes de verano.</p>
+                        <p>Este barrio es un ejemplo de crecimiento urbano planificado, que busca ofrecer calidad de vida y servicios cercanos, contrastando con el entramado irregular del casco histórico.</p>
+                    ` 
+                },
+                "ies-juancarlos": { 
+                    title: "IES Juan Carlos I", 
+                    maps_query: "Calle de San Francisco s/n, Ciempozuelos", 
+                    description: `
+                        <p>El <strong>IES Juan Carlos I</strong> es una institución clave en la educación de la comarca. Situado en un entorno accesible, este instituto ha formado a generaciones de ciempozueleños, adaptándose continuamente a los cambios educativos y tecnológicos.</p>
+                        <p><strong>Dirección:</strong> C/ San Francisco, s/n, 28350 Ciempozuelos, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 893 01 58<br>
+                        <strong>Email:</strong> ies.juancarlos.ciempozuelos@educa.madrid.org</p>
+                        <p>Cuenta con un equipo docente comprometido y una oferta educativa que cubre ESO y Bachillerato en las modalidades de Ciencias y Ciencias Sociales. Sus instalaciones son amplias, con laboratorios de física, química y biología bien equipados que permiten un aprendizaje práctico.</p>
+                        <p>El centro promueve valores de convivencia y respeto, organizando jornadas culturales, semanas de la ciencia y competiciones deportivas que involucran a toda la comunidad educativa.</p>
+                    ` 
+                },
+                "ies-umbral": { 
+                    title: "IES Francisco Umbral", 
+                    maps_query: "Avenida de la Hispanidad s/n, Ciempozuelos", 
+                    description: `
+                        <p>El <strong>IES Francisco Umbral</strong>, nombrado en honor al célebre escritor y periodista español, es un referente en la formación académica y profesional de la zona sur de Madrid. Es un edificio moderno y funcional, diseñado para facilitar el aprendizaje.</p>
+                        <p><strong>Dirección:</strong> Avda. de la Hispanidad, s/n, 28350 Ciempozuelos, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 809 28 10<br>
+                        <strong>Email:</strong> ies.franciscoumbral.ciempozuelos@educa.madrid.org</p>
+                        <p>Además de la educación secundaria y el bachillerato, el Francisco Umbral destaca por su potente oferta de Formación Profesional. Imparte ciclos formativos relacionados con la Sanidad y los Servicios Socioculturales, aprovechando la tradición sanitaria de Ciempozuelos para ofrecer prácticas de calidad en centros cercanos.</p>
+                        <p>Es un instituto vivo, con numerosos proyectos de intercambio, biblioteca activa y una clara vocación de preparar a sus alumnos para el mercado laboral real.</p>
+                    ` 
+                },
+
+                // ARANJUEZ
+                "aranjuez-palacio": { 
+                    title: "Palacio Real de Aranjuez", 
+                    maps_query: "Palacio Real de Aranjuez", 
+                    description: `
+                        <p>El <strong>Palacio Real de Aranjuez</strong> es una de las residencias más bellas y simbólicas de la monarquía española. Sus orígenes se remontan a una orden de Felipe II, quien deseaba una villa de recreo inspirada en los ideales renacentistas italianos, aunque su aspecto actual, con la inconfundible fachada en colores blanco y rojo (piedra de Colmenar y ladrillo), se debe a las ampliaciones de los Borbones en el siglo XVIII.</p>
+                        <p>El interior es un despliegue de lujo y arte. Destaca sobremanera el <strong>Gabinete de Porcelana</strong>, una obra maestra de la Real Fábrica del Buen Retiro, donde paredes y techos están cubiertos de delicada porcelana en relieve con motivos chinescos. Igualmente impresionante es el Salón de Espejos y la majestuosa Escalera Imperial con su balaustrada rococó.</p>
+                        <p>Este palacio no fue diseñado para el gobierno, sino para el placer y la primavera. Rodeado por el río Tajo, el edificio parece flotar en un entorno de jardines y bosques, cumpliendo el sueño de sus fundadores de crear un paraíso terrenal.</p>
+                    ` 
+                },
+                "aranjuez-jardin-principe": { 
+                    title: "Jardín del Príncipe", 
+                    maps_query: "Jardín del Príncipe, Aranjuez", 
+                    description: `
+                        <p>El <strong>Jardín del Príncipe</strong> es el jardín vallado más grande de Europa, con un perímetro de 7 kilómetros y una extensión de 150 hectáreas. Creado por Carlos IV cuando aún era Príncipe de Asturias, este espacio rompe con la geometría rígida del estilo francés para abrazar el paisajismo inglés, más natural y romántico.</p>
+                        <p>Pasear por aquí es una aventura botánica, con árboles monumentales traídos de América y Asia, como ahuehuetes y plátanos de sombra gigantescos. El jardín alberga caprichos arquitectónicos como el <strong>Estanque de los Chinescos</strong>, con sus templetes griego y chinesco, un lugar de ensueño que parece sacado de un cuento de hadas.</p>
+                        <p>En su extremo final se encuentra la Casa del Labrador y el Museo de Falúas Reales, donde se exhiben las lujosas embarcaciones que los reyes utilizaban para navegar por el Tajo, recordando las fiestas náuticas de antaño.</p>
+                    ` 
+                },
+                "aranjuez-casa-labrador": { 
+                    title: "Real Casa del Labrador", 
+                    maps_query: "Casa del Labrador, Aranjuez", 
+                    description: `
+                        <p>La <strong>Real Casa del Labrador</strong> es una joya neoclásica escondida dentro del Jardín del Príncipe. A pesar de su nombre humilde, es uno de los palacetes más lujosos y exquisitos de Europa. Fue construida como un "capricho" para Carlos IV, un lugar de retiro privado alejado de la etiqueta de la corte.</p>
+                        <p>Su interior es deslumbrante. Conserva la decoración original prácticamente intacta, con suelos de mármol de incalculable valor, techos pintados al temple, sedas valencianas en las paredes y una colección de relojes y porcelanas única. Destaca la Sala de Billar y el Salón de Baile.</p>
+                        <p>Visitar la Casa del Labrador es comprender el gusto refinado y a veces ostentoso de la monarquía del siglo XIX. Es un edificio delicado que requiere reserva previa, pero que recompensa al visitante con una belleza abrumadora.</p>
+                    ` 
+                },
+                "aranjuez-jardin-isla": { 
+                    title: "Jardín de la Isla", 
+                    maps_query: "Jardín de la Isla, Aranjuez", 
+                    description: `
+                        <p>El <strong>Jardín de la Isla</strong> es un oasis renacentista único en España. Situado en una isla artificial formada por el río Tajo y una ría canalizada, este jardín es el retiro íntimo que Felipe II soñó. Es un espacio de sombra, frescor y sonido de agua, diseñado para la contemplación y el paseo.</p>
+                        <p>Su trazado es geométrico y está jalonado por una impresionante colección de fuentes mitológicas de mármol y bronce: la de Hércules y la Hidra, la de Apolo, la de las Arpías... Cada fuente cuenta una historia clásica y refresca el ambiente en los calurosos días de verano.</p>
+                        <p>A diferencia de otros jardines reales, el de la Isla es recogido y misterioso. Sus calles de bojes recortados y sus altos árboles crean túneles de vegetación que invitan a perderse y a imaginar los paseos de la corte del Siglo de Oro.</p>
+                    ` 
+                },
+                "aranjuez-montana": { 
+                    title: "Barrio de la Montaña", 
+                    maps_query: "Barrio de la Montaña, Aranjuez", 
+                    description: `
+                        <p>El <strong>Barrio de la Montaña</strong> representa la expansión moderna de Aranjuez hacia el norte. Situado en una elevación geográfica, ofrece una perspectiva diferente de la ciudad y un entorno residencial contemporáneo, con amplias avenidas y zonas ajardinadas.</p>
+                        <p>En este barrio se encuentran infraestructuras clave como el <strong>Gran Casino de Aranjuez</strong>, un edificio de ocio y espectáculos de gran envergadura, y el Hospital del Tajo, que da servicio a toda la comarca. También alberga el moderno centro comercial y zonas hoteleras.</p>
+                        <p>A pesar de su modernidad, el barrio mantiene la conexión con la naturaleza, estando próximo a zonas de olivar y senderos rurales. Es una zona vibrante y joven, preferida por muchas familias nuevas que buscan calidad de vida a un paso del Real Sitio.</p>
+                    ` 
+                },
+                "aranjuez-aves": { 
+                    title: "Barrio de las Aves", 
+                    maps_query: "Barrio de las Aves, Aranjuez", 
+                    description: `
+                        <p>El <strong>Barrio de las Aves</strong> es uno de los barrios más tradicionales y con más solera de Aranjuez. Su nombre proviene de que todas sus calles tienen nombres de pájaros (Calle de la Calandria, del Ruiseñor, etc.), lo que le da un encanto especial.</p>
+                        <p>Situado muy cerca de la estación de tren, históricamente fue un barrio de trabajadores ferroviarios y de la industria local. Se caracteriza por sus casas bajas y un ambiente vecinal muy arraigado, donde todos se conocen y la vida se hace en la calle.</p>
+                        <p>Es un barrio tranquilo y humilde, pero lleno de vida, con pequeños comercios de toda la vida y bares donde disfrutar de las mejores tapas locales. Representa el Aranjuez más auténtico y cotidiano, alejado de la monumentalidad turística del Palacio.</p>
+                    ` 
+                },
+                "aranjuez-alpajes": { 
+                    title: "IES Alpajés", 
+                    maps_query: "IES Alpajés, Aranjuez", 
+                    description: `
+                        <p>El <strong>IES Alpajés</strong> es una institución educativa histórica en Aranjuez. Su nombre hace referencia a la antigua finca real de Alpajés. Situado en la zona sur, cerca del Tajo, es un centro amplio rodeado de zonas verdes que favorecen un ambiente de estudio relajado.</p>
+                        <p><strong>Dirección:</strong> Calle de las Moreras, s/n, 28300 Aranjuez, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 891 60 15<br>
+                        <strong>Email:</strong> ies.alpajes.aranjuez@educa.madrid.org</p>
+                        <p>Es conocido por su excelencia académica y su amplia oferta, que incluye Bachillerato Internacional, una modalidad exigente que abre las puertas de universidades de todo el mundo. También cuenta con una fuerte rama de Formación Profesional, especialmente en áreas agrarias y medioambientales, honrando la tradición agrícola de Aranjuez.</p>
+                        <p>El instituto es muy activo en la vida cultural de la ciudad, organizando certámenes literarios y colaborando en proyectos de recuperación del patrimonio natural del río.</p>
+                    ` 
+                },
+                "aranjuez-scarlatti": { 
+                    title: "IES Domenico Scarlatti", 
+                    maps_query: "IES Domenico Scarlatti, Aranjuez", 
+                    description: `
+                        <p>El <strong>IES Domenico Scarlatti</strong> lleva el nombre del genial compositor italiano que vivió y compuso en Aranjuez al servicio de la corte española. Situado en pleno centro urbano, es un instituto con una fuerte identidad humanística y artística.</p>
+                        <p><strong>Dirección:</strong> Calle de Valeras, 24, 28300 Aranjuez, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 891 14 40<br>
+                        <strong>Email:</strong> ies.domenicoscarlatti.aranjuez@educa.madrid.org</p>
+                        <p>Este centro se distingue por su Bachillerato de Artes, siendo el referente para los jóvenes creadores de la comarca. Sus pasillos suelen estar decorados con las obras de los alumnos, y sus festivales de música y teatro son eventos esperados en el calendario escolar.</p>
+                        <p>Además de las artes, el Scarlatti mantiene un alto nivel en las ramas científicas y sociales, promoviendo una educación integral que busca formar ciudadanos críticos y sensibles a la cultura.</p>
+                    ` 
+                },
+                "aranjuez-urjc": { 
+                    title: "Campus URJC Aranjuez", 
+                    maps_query: "Antiguo Cuartel de Pavía, Aranjuez", 
+                    description: `
+                        <p>El <strong>Campus de Aranjuez de la Universidad Rey Juan Carlos (URJC)</strong> es un ejemplo brillante de recuperación de patrimonio histórico para uso educativo. Se ubica principalmente en el <strong>Antiguo Cuartel de Pavía</strong>, un imponente edificio militar del siglo XVIII rehabilitado con maestría.</p>
+                        <p><strong>Dirección:</strong> Calle de los Infantes, 5, 28300 Aranjuez, Madrid.<br>
+                        <strong>Teléfono:</strong> 91 488 70 00<br>
+                        <strong>Web:</strong> www.urjc.es</p>
+                        <p>Estudiar aquí es un privilegio. Las aulas combinan muros de ladrillo histórico con la última tecnología. El campus ofrece titulaciones en Bellas Artes, Diseño, Traducción e Interpretación, y Criminología, entre otras, atrayendo a estudiantes de toda España.</p>
+                        <p>La presencia de la universidad ha rejuvenecido la ciudad, llenando sus calles de vida universitaria y actividades culturales. El campus se integra perfectamente en el paisaje cultural, permitiendo a los estudiantes inspirarse en la misma belleza que cautivó a reyes y artistas durante siglos.</p>
+                    ` 
+                }
+            };
+
+            function openModal(poiId) {
+                if (poiData[poiId] && poiModal) {
+                    const data = poiData[poiId];
+                    if(modalTitle) modalTitle.textContent = data.title;
+                    if(modalDescription) modalDescription.innerHTML = data.description; 
+                    
+                    if (data.maps_query && modalDirectionsBtn) {
+                        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(data.maps_query)}`;
+                        modalDirectionsBtn.href = directionsUrl;
+                        modalDirectionsBtn.style.display = 'inline-flex';
+                    } else if (modalDirectionsBtn) {
+                        modalDirectionsBtn.style.display = 'none';
+                    }
+                    
+                    poiModal.classList.add('active');
+                }
+            }
+            function closeModal() { 
+                if(poiModal) poiModal.classList.remove('active'); 
+            }
+
+            const galleryItems = document.querySelectorAll('.gallery-item'); 
+            galleryItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if(item.dataset.poiId) { 
+                        openModal(item.dataset.poiId);
+                    }
+                });
+            });
+
+            if(modalClose) modalClose.addEventListener('click', closeModal);
+            if(poiModal) poiModal.addEventListener('click', (e) => {
+                if (e.target === poiModal) closeModal();
+            });
+
+            // Init
+            const savedTheme = localStorage.getItem('interactive-guide-theme') || 'light';
+            applyTheme(savedTheme);
+            applySettings();
+            showScreen('screen-login', 'Acceso');
+        });
+    </script>
+</body>
+</html>
