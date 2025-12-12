@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CortexDocs - Colaboración Inteligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+
+    <section id="login-overlay" class="login-overlay">
+        <div class="login-card bounce-in">
+            <!-- VIEW: HOME (Initial) -->
+            <div id="auth-view-home" class="auth-view">
+                <div class="brand-container-large">
+                    <svg class="cortex-emblem-large" viewBox="0 0 100 100" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90C72.0914 90 90 72.0914 90 50"
+                            stroke="url(#paint0_linear)" stroke-width="8" stroke-linecap="round" />
+                        <path d="M50 30V50L65 65" stroke="url(#paint1_linear)" stroke-width="8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <circle cx="50" cy="50" r="12" fill="var(--primary)" />
+                        <circle cx="25" cy="35" r="6" fill="var(--primary-light)" />
+                        <circle cx="75" cy="35" r="6" fill="var(--primary-light)" />
+                        <circle cx="35" cy="75" r="6" fill="var(--primary-light)" />
+                        <defs>
+                            <linearGradient id="paint0_linear" x1="10" y1="50" x2="90" y2="50"
+                                gradientUnits="userSpaceOnUse">
+                                <stop stop-color="var(--primary)" />
+                                <stop offset="1" stop-color="var(--primary-dark)" />
+                            </linearGradient>
+                            <linearGradient id="paint1_linear" x1="50" y1="30" x2="65" y2="65"
+                                gradientUnits="userSpaceOnUse">
+                                <stop stop-color="var(--primary-light)" />
+                                <stop offset="1" stop-color="var(--primary)" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1 class="app-title-large">CortexDocs</h1>
+                </div>
+                <p class="login-subtitle">El centro neural para la documentación de tu equipo.</p>
+
+                <div class="auth-buttons-container">
+                    <button id="google-login-btn-hero" class="btn-hero btn-google-hero">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google G">
+                        <span>Continuar con Google</span>
+                    </button>
+
+                    <div class="auth-divider">
+                        <span>o</span>
+                    </div>
+
+                    <button id="to-login-btn" class="btn-hero btn-outline">
+                        <i class="fa-solid fa-envelope"></i> Iniciar Sesión (Correo)
+                    </button>
+                    <button id="to-register-btn" class="btn-hero btn-secondary">
+                        <i class="fa-solid fa-user-plus"></i> Crear Cuenta
+                    </button>
+                </div>
+                <p class="secure-note"><i class="fa-solid fa-shield-halved"></i> Acceso seguro vía Firebase</p>
+            </div>
+
+            <!-- VIEW: LOGIN (Email + Password) -->
+            <div id="auth-view-login" class="auth-view hidden">
+                <header class="auth-header">
+                    <button class="btn-back" data-target="home"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2>Bienvenido de nuevo</h2>
+                </header>
+                <form id="login-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <input type="email" id="login-email" required placeholder="nombre@empresa.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-primary-block">Iniciar Sesión</button>
+                </form>
+            </div>
+
+            <!-- VIEW: REGISTER STEP 1 (Email) -->
+            <div id="auth-view-register-1" class="auth-view hidden">
+                <header class="auth-header">
+                    <button class="btn-back" data-target="home"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2>Crear Cuenta</h2>
+                </header>
+                <p class="auth-step-desc">Paso 1: Verificación de identidad. Te enviaremos un enlace mágico.</p>
+                <form id="register-email-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="reg-email">Correo Electrónico</label>
+                        <input type="email" id="reg-email" required placeholder="nombre@empresa.com">
+                    </div>
+                    <button type="submit" class="btn-primary-block">Enviar Enlace de Verificación</button>
+                </form>
+            </div>
+
+            <!-- VIEW: REGISTER STEP 1 SUCCESS (Wait for email) -->
+            <div id="auth-view-register-sent" class="auth-view hidden">
+                <div class="icon-circle-large success-icon">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+                <h2>¡Correo Enviado!</h2>
+                <p class="auth-message">Hemos enviado un enlace de confirmación a <strong
+                        id="sent-to-email">...</strong></p>
+                <p class="auth-submessage">Revisa tu bandeja (y spam). Haz clic en el enlace para continuar.</p>
+                <button class="btn-outline-block" id="btn-back-home-sent">Volver al inicio</button>
+            </div>
+
+            <!-- VIEW: REGISTER STEP 2 (Create Password) -->
+            <div id="auth-view-register-2" class="auth-view hidden">
+                <header class="auth-header">
+                    <h2>Establecer Contraseña</h2>
+                </header>
+                <p class="auth-step-desc">¡Correo verificado! Ahora asegura tu cuenta.</p>
+                <form id="register-password-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="reg-username">Nombre de Usuario</label>
+                        <input type="text" id="reg-username" required minlength="3" placeholder="Ej: neo_anderson">
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-pass">Contraseña</label>
+                        <input type="password" id="reg-pass" required minlength="6" placeholder="Nueva contraseña">
+                        <div class="password-strength-meter">
+                            <div class="strength-bar" id="strength-bar"></div>
+                        </div>
+                        <span class="strength-text" id="strength-text">Seguridad: Baja</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-pass-confirm">Confirmar Contraseña</label>
+                        <input type="password" id="reg-pass-confirm" required placeholder="Repite la contraseña">
+                    </div>
+                    <button type="submit" class="btn-primary-block">Finalizar Registro</button>
+                </form>
+            </div>
+
+            <!-- VIEW: REGISTER SUCCESS (Password Set) -->
+            <div id="auth-view-register-success" class="auth-view hidden">
+                <div class="icon-circle-large success-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h2>¡Todo listo!</h2>
+                <p class="auth-message">Tu cuenta ha sido creada y asegurada.</p>
+                <button id="btn-enter-app" class="btn-primary-block">Entrar a CortexDocs</button>
+            </div>
+
+        </div>
+    </section>
+
+
+    <div id="main-app-container" class="main-app-container hidden">
+        <header id="app-header" class="app-header">
+            <div class="brand-container-small">
+                <svg class="cortex-emblem-small" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90C72.0914 90 90 72.0914 90 50"
+                        stroke="var(--primary)" stroke-width="12" stroke-linecap="round" />
+                    <circle cx="50" cy="50" r="15" fill="var(--primary)" />
+                </svg>
+                <span class="logo-text">CortexDocs</span>
+            </div>
+
+            <div id="user-info" class="user-info">
+                <span id="user-name" class="user-name">Cargando...</span>
+                <img id="user-avatar" src="" alt="Avatar" class="avatar">
+
+                <!-- Settings Dropdown Container -->
+                <div class="settings-container">
+                    <button id="settings-btn" class="btn-icon-text" title="Configuración">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+                    <div id="settings-dropdown" class="settings-dropdown hidden">
+                        <div class="settings-section">
+                            <div class="settings-item-row">
+                                <span><i class="fa-solid fa-moon"></i> Modo Oscuro</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="theme-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h4 class="settings-header"><i class="fa-solid fa-universal-access"></i> Accesibilidad</h4>
+
+                            <div class="settings-item-row" style="margin-bottom:8px;">
+                                <span>Fuente Dislexia</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="acc-dyslexia">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="settings-item-row" style="margin-bottom:8px;">
+                                <span><i class="fa-solid fa-eye"></i> Descanso Visual</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="acc-warm">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-border-top">
+                            <button id="logout-btn" class="btn-logout-menu">
+                                <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-wrapper">
+
+            <!-- DASHBOARD VIEW (Folders) -->
+            <section id="dashboard-view" class="">
+                <div id="folders-grid" class="folders-grid">
+                    <!-- Folders injected here -->
+                    <div class="loading-spinner">Cargando carpetas...</div>
+                </div>
+            </section>
+
+            <!-- FOLDER CONTENT VIEW (Files) -->
+            <section id="folder-view" class="hidden">
+                <header class="folder-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button id="btn-back-dashboard" class="btn-text">
+                            <i class="fa-solid fa-arrow-left"></i> Volver
+                        </button>
+                        <h2 id="current-folder-name" style="margin:0;">Nombre Carpeta</h2>
+                    </div>
+                    <button id="btn-invite-member" class="btn-primary-small btn-invite">
+                        <i class="fa-solid fa-user-plus"></i> Invitar
+                    </button>
+                    <!-- Folder Menu (Hamburger) -->
+                    <div style="position:relative;">
+                        <button id="btn-folder-menu" class="btn-icon" style="margin-left:10px; font-size:1.2rem;">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <div id="folder-menu-dropdown" class="folder-dropdown-menu hidden">
+                            <button id="btn-menu-archived"><i class="fa-solid fa-box-archive"></i> Ver Archivos
+                                Archivados</button>
+                            <button id="btn-menu-activity"><i class="fa-solid fa-clock-rotate-left"></i> Ver
+                                Actividad</button>
+                            <button id="btn-menu-members"><i class="fa-solid fa-users"></i> Ver Usuarios</button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="uploader-card">
+                    <header class="card-header">
+                        <h2>Sincronizar Documento</h2>
+                        <p>Comparte conocimientos en esta carpeta</p>
+                    </header>
+
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone__content">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p class="drop-zone__text">Arrastra documentos, imágenes o código</p>
+
+                            <div class="upload-options" style="margin-top: 20px;">
+                                <button id="btn-drive-upload" class="btn-google-drive">
+                                    <i class="fa-brands fa-google-drive"></i> Desde Google Drive
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="fileInput" hidden
+                            accept=".pdf,.txt,.md,.json,.xml,.html,.css,.js,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.docx,.doc,.pptx,.ppt,.sql,.java,.xsl,.xslt">
+                    </div>
+
+                    <div id="upload-progress-container" class="progress-container hidden">
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span id="progress-text">Iniciando sinapsis... 0%</span>
+                    </div>
+                </div>
+
+                <section id="files-feed" class="files-feed">
+                    <h3><i class="fa-solid fa-network-wired"></i> Archivos de la Carpeta</h3>
+                    <div id="files-list" class="files-list">
+                        <div class="loading-spinner">Conectando con el córtex...</div>
+                    </div>
+                </section>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- CREATE FOLDER MODAL -->
+    <div id="create-folder-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3 id="modal-title">Nueva Carpeta</h3>
+                <button id="btn-close-modal" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <form id="create-folder-form">
+                <div class="input-group">
+                    <label for="folder-name">Nombre</label>
+                    <input type="text" id="folder-name" required placeholder="Ej: Proyectos 2024" maxlength="30">
+                </div>
+                <!-- Simple Color Selection -->
+                <div class="input-group">
+                    <label>Color</label>
+                    <div class="color-options">
+                        <label class="color-radio">
+                            <input type="radio" name="folder-color" value="var(--primary)" checked>
+                            <span class="swatch" style="background: var(--primary)"></span>
+                        </label>
+                        <label class="color-radio">
+                            <input type="radio" name="folder-color" value="#ef4444">
+                            <span class="swatch" style="background: #ef4444"></span>
+                        </label>
+                        <label class="color-radio">
+                            <input type="radio" name="folder-color" value="#f59e0b">
+                            <span class="swatch" style="background: #f59e0b"></span>
+                        </label>
+                        <label class="color-radio">
+                            <input type="radio" name="folder-color" value="#10b981">
+                            <span class="swatch" style="background: #10b981"></span>
+                        </label>
+                        <label class="color-radio">
+                            <input type="radio" name="folder-color" value="#ec4899">
+                            <span class="swatch" style="background: #ec4899"></span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary-block">Crear Carpeta</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- INVITE MEMBER MODAL -->
+    <div id="invite-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3>Invitar Miembro</h3>
+                <button id="btn-close-invite-modal" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <p class="auth-submessage" style="margin-bottom: 15px;">Añade a otro usuario a esta carpeta.</p>
+            <form id="invite-form">
+                <div class="input-group">
+                    <label for="invite-username">Nombre de usuario</label>
+                    <input type="text" id="invite-username" required placeholder="Ej: IvanCorreo" autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary-block">Enviar Invitación</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="delete-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3 id="delete-modal-title">Eliminar Carpeta</h3>
+                <button id="btn-close-delete-modal" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div style="text-align:center; padding: 20px 0;">
+                <p id="delete-modal-text" style="color:var(--text-muted); margin-bottom: 20px;">
+                    ¿Estás seguro de que quieres eliminar esta carpeta? <br>
+                    <small>Esta acción no se puede deshacer.</small>
+                </p>
+                <div style="display:flex; gap:10px; justify-content: center;">
+                    <button id="btn-cancel-delete" class="btn-text">Cancelar</button>
+                    <button id="btn-confirm-delete" class="btn-primary-small"
+                        style="background:var(--danger); color:white;">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <!-- ARCHIVED FILES MODAL -->
+    <div id="archived-files-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in modal-large">
+            <header class="modal-header">
+                <h3><i class="fa-solid fa-box-archive"></i> Archivos Archivados</h3>
+                <button id="btn-close-archived" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div id="archived-list" class="modal-list-content">
+                <p class="empty-msg">No hay archivos archivados.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVITY LOG MODAL -->
+    <div id="activity-log-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in modal-large">
+            <header class="modal-header">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Actividad de la Carpeta</h3>
+                <button id="btn-close-activity" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div id="activity-list" class="modal-list-content activity-timeline">
+                <p class="empty-msg">No hay actividad reciente.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEMBERS MODAL -->
+    <div id="folder-members-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3><i class="fa-solid fa-users"></i> Usuarios de la Carpeta</h3>
+                <button id="btn-close-members" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div id="members-list" class="modal-list-content">
+                <!-- User list injected here -->
+            </div>
+            <div class="modal-footer">
+                <button id="btn-open-invite-modal" class="btn-primary-small full-width">Invitar Nuevo Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOVE FILE MODAL -->
+    <div id="move-file-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3>Mover Archivo</h3>
+                <button id="btn-close-move" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <p style="margin-bottom:15px; color:var(--text-muted);">Selecciona la carpeta de destino:</p>
+            <div id="move-folders-list" class="move-folders-list">
+                <!-- Folders injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- RENAME FILE MODAL -->
+    <div id="rename-file-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in">
+            <header class="modal-header">
+                <h3>Renombrar Archivo</h3>
+                <button id="btn-close-rename-file" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <form id="rename-file-form">
+                <div class="input-group">
+                    <label for="file-rename-input">Nuevo Nombre</label>
+                    <input type="text" id="file-rename-input" required placeholder="Nombre del archivo">
+                </div>
+                <button type="submit" class="btn-primary-block">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CODE VIEWER MODAL -->
+    <div id="code-viewer-modal" class="modal-overlay hidden">
+        <div class="modal-card bounce-in modal-large"
+            style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
+            <header class="modal-header">
+                <h3 id="code-viewer-title"><i class="fa-solid fa-code"></i> Visor de Código</h3>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button id="btn-copy-code" class="btn-text" style="font-size: 0.9rem;"><i
+                            class="fa-regular fa-copy"></i> Copiar</button>
+                    <button id="btn-close-code-viewer" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </header>
+            <div class="modal-body" style="flex: 1; overflow: hidden; padding: 0;">
+                <pre id="code-viewer-content" class="code-viewer-content">Cargando...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
