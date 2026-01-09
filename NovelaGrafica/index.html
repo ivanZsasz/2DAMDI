@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovelasFLV - Tu Directorio de Novelas Gráficas</title>
+
+    <!-- Configuración de Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316',
+                        'primary-hover': '#ea580c'
+                    },
+                    cursor: {
+                        'move': 'move',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Iconos Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&family=Comic+Neue:wght@400;700&family=Courier+Prime&family=Roboto:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="flex flex-col min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+
+    <!-- NAV BAR -->
+    <nav
+        class="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="resetFilters()">
+                    <div class="bg-primary p-1 rounded">
+                        <i data-lucide="book-open" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">Novelas<span
+                            class="text-primary">FLV</span></span>
+                </div>
+
+                <!-- Barra de búsqueda -->
+                <div class="hidden md:flex flex-1 mx-8">
+                    <div class="relative w-full max-w-md mx-auto">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="text-slate-400 w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="searchInput"
+                            class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-full leading-5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-300 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                            placeholder="Buscar título, autor...">
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleTheme()"
+                        class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors">
+                        <i id="themeIcon" data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                        <i id="themeIconLight" data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                    </button>
+
+                    <button onclick="openModal('editorModal')"
+                        class="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-slate-700">
+                        <i data-lucide="edit" class="w-4 h-4"></i> <span class="hidden lg:inline">Crear / Subir</span>
+                    </button>
+                    <button onclick="openModal('authModal')"
+                        class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-orange-500/20 transition-all">
+                        Acceder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+        <!-- SIDEBAR FILTERS -->
+        <aside class="w-full md:w-64 flex-shrink-0 space-y-8">
+            <div
+                class="bg-white/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700/50 backdrop-blur-sm sticky top-24 transition-colors">
+                <div class="flex items-center gap-2 mb-4 text-primary">
+                    <i data-lucide="filter" class="w-5 h-5"></i>
+                    <h3 class="font-bold uppercase tracking-wider text-sm">Filtros</h3>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Género</label>
+                    <select id="genreFilter"
+                        class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-primary dark:text-slate-200">
+                        <option value="all">Todos</option>
+                        <option value="accion">Acción</option>
+                        <option value="romance">Romance</option>
+                        <option value="fantasia">Fantasía</option>
+                        <option value="terror">Terror</option>
+                        <option value="sincensura" class="text-red-500 font-bold">Sin censura 🔞</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Longitud</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="length" value="all" checked
+                                class="text-primary focus:ring-primary bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700">
+                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Cualquiera</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="length" value="short"
+                                class="text-primary focus:ring-primary bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700">
+                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Corto</span>
+                        </label>
+                    </div>
+                </div>
+                <button onclick="applyFilters()"
+                    class="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                    Aplicar
+                </button>
+            </div>
+        </aside>
+
+        <!-- GRID CONTENT -->
+        <main class="flex-1">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-1">Explorar Catálogo</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm">Descubre las mejores historias.</p>
+                </div>
+                <span id="resultsCount"
+                    class="text-sm bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">Cargando...</span>
+            </div>
+            <div id="mangaGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                <div class="bg-slate-200 dark:bg-slate-800 p-4 rounded-full mb-4">
+                    <i data-lucide="ghost" class="w-10 h-10 text-slate-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700 dark:text-slate-300">Sin resultados</h3>
+                <button onclick="resetFilters()" class="mt-4 text-primary underline">Limpiar</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: EDITOR COMPLEJO (InkStudio) -->
+    <div id="editorModal"
+        class="fixed inset-0 z-[100] hidden-modal transition-all duration-300 flex items-center justify-center p-0 md:p-4">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="closeModal('editorModal')"></div>
+
+        <div
+            class="bg-white dark:bg-slate-900 w-full h-full md:rounded-2xl shadow-2xl relative z-10 flex flex-col overflow-hidden">
+            <!-- Header del Editor -->
+            <div
+                class="h-16 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-white dark:bg-slate-900">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary/20 p-2 rounded-lg text-primary">
+                        <i data-lucide="pen-tool" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight dark:text-white">InkStudio Editor</h3>
+                        <p class="text-xs text-slate-500">Modo de edición de páginas</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('editorModal')"
+                        class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors">Cancelar</button>
+                    <button onclick="alert('Proyecto Guardado (Demo)')"
+                        class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Guardar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cuerpo del Editor -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Panel de Herramientas (Izquierda) -->
+                <div
+                    class="w-72 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 p-5 flex flex-col gap-6 overflow-y-auto">
+
+                    <!-- 1. Subir Imagen Base -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold uppercase text-slate-500 tracking-wider">1. Lienzo</h4>
+                        <label
+                            class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i data-lucide="image-plus" class="w-8 h-8 mb-2 text-slate-400"></i>
+                                <p class="text-xs text-slate-500">Click para subir JPG/PNG</p>
+                            </div>
+                            <input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                        </label>
+                    </div>
+
+                    <hr class="border-slate-200 dark:border-slate-700">
+
+                    <!-- 2. Herramientas de Texto -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold uppercase text-slate-500 tracking-wider">2. Texto y Tipografía</h4>
+
+                        <button onclick="addTextLayer()"
+                            class="w-full py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 font-medium text-slate-700 dark:text-slate-200">
+                            <i data-lucide="type" class="w-4 h-4"></i> Añadir Texto
+                        </button>
+
+                        <!-- Botones de Agrupación -->
+                        <div id="groupControls" class="grid grid-cols-2 gap-2 hidden">
+                            <button onclick="groupSelected()"
+                                class="py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded text-xs font-bold hover:bg-blue-200 transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="group" class="w-3 h-3"></i> Agrupar
+                            </button>
+                            <button onclick="ungroupSelected()"
+                                class="py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded text-xs font-bold hover:bg-slate-300 transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="ungroup" class="w-3 h-3"></i> Separar
+                            </button>
+                        </div>
+
+                        <!-- Controles de Texto (Deshabilitados hasta seleccionar) -->
+                        <div id="textControls" class="space-y-4 opacity-50 pointer-events-none transition-opacity">
+
+                            <!-- Fuente -->
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Fuente</label>
+                                <select id="fontFamilySelector" onchange="updateSelectedText('fontFamily', this.value)"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2 text-sm dark:text-white">
+                                    <option value="'Outfit', sans-serif">Outfit (Modern)</option>
+                                    <option value="'Bangers', cursive">Bangers (Comic)</option>
+                                    <option value="'Comic Neue', cursive">Comic Neue</option>
+                                    <option value="'Courier Prime', monospace">Courier (Dialog)</option>
+                                    <option value="'Roboto', sans-serif">Roboto</option>
+                                </select>
+                            </div>
+
+                            <!-- Tamaño y Color -->
+                            <div class="flex gap-2">
+                                <div class="flex-1">
+                                    <label class="block text-xs text-slate-500 mb-1">Tamaño (px)</label>
+                                    <input type="number" id="fontSizeInput" value="20"
+                                        onchange="updateSelectedText('fontSize', this.value + 'px')"
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2 text-sm dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">Color</label>
+                                    <input type="color" id="colorInput" value="#000000"
+                                        onchange="updateSelectedText('color', this.value)"
+                                        class="h-9 w-full bg-transparent cursor-pointer rounded">
+                                </div>
+                            </div>
+
+                            <!-- Fondo del Texto -->
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="bgCheckbox" onchange="toggleTextBackground(this.checked)"
+                                    class="rounded text-primary focus:ring-primary">
+                                <label class="text-sm text-slate-600 dark:text-slate-300">Fondo Blanco (Globo)</label>
+                            </div>
+
+                            <button onclick="deleteSelectedText()"
+                                class="w-full py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded text-sm hover:bg-red-200 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar Capa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Area (Centro) -->
+                <div class="flex-1 bg-slate-200 dark:bg-black/50 overflow-auto flex p-8" id="editor-canvas-container">
+                    <!-- El lienzo escalable -->
+                    <div id="editor-canvas"
+                        class="bg-white relative shadow-2xl transition-all duration-300 min-w-[300px] min-h-[400px] flex items-center justify-center">
+                        <p id="canvas-placeholder" class="text-slate-400 text-sm select-none pointer-events-none">Sube
+                            una imagen para comenzar</p>
+                        <img id="editor-image" class="w-full h-auto pointer-events-none select-none hidden"
+                            alt="Lienzo">
+                        <!-- Caja de Selección -->
+                        <div id="selection-box"></div>
+                        <!-- Aquí se inyectarán los textos -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LOGIN (Simple) -->
+    <div id="authModal"
+        class="fixed inset-0 z-[100] hidden-modal transition-all duration-300 flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('authModal')"></div>
+        <div
+            class="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-sm w-full relative z-10 shadow-2xl border dark:border-slate-700">
+            <h3 class="text-2xl font-bold dark:text-white mb-4">Acceso Rápido</h3>
+            <p class="text-slate-500 mb-6">Inicia sesión para guardar tus ediciones.</p>
+            <button class="w-full bg-primary text-white py-2 rounded-lg font-bold mb-2">Google Login</button>
+            <button class="w-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-lg"
+                onclick="closeModal('authModal')">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- MODAL: READER -->
+    <div id="readerModal"
+        class="fixed inset-0 z-[100] hidden-modal transition-all duration-300 flex flex-col bg-slate-50 dark:bg-black">
+        <div
+            class="flex items-center justify-between p-4 bg-white/90 dark:bg-slate-900/80 absolute top-0 w-full z-10 border-b border-slate-200 dark:border-slate-800">
+            <h3 id="readerTitle" class="text-slate-900 dark:text-white font-bold truncate">Leyendo...</h3>
+            <button onclick="closeModal('readerModal')"
+                class="text-slate-600 dark:text-white bg-slate-200 dark:bg-slate-700 p-2 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="flex-1 flex justify-center items-center p-4">
+            <p class="text-slate-500">Visor de lectura (Placeholder)</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
