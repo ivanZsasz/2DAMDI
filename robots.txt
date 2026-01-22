@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://ivanzsasz.github.io/2DAMDI/sitemap.xml
