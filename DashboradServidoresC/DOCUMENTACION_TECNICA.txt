@@ -1,0 +1,815 @@
+================================================================================
+          DOCUMENTACIÓN TÉCNICA - CENTRO DE CONTROL DE SERVIDORES
+================================================================================
+
+Autor: Desarrollador Senior FullStack
+Fecha: 27 de Enero de 2026
+Proyecto: DashboardServidores - Sistema de Monitoreo en Tiempo Real
+
+
+================================================================================
+SECCIÓN 1: ¿QUÉ ES EL ARCHIVO package.json?
+================================================================================
+
+El archivo package.json es el "corazón" de cualquier proyecto Node.js. Es un 
+archivo de configuración en formato JSON que define toda la información esencial
+del proyecto.
+
+CONTENIDO DEL ARCHIVO:
+----------------------
+
+{
+  "name": "dashboard-servidores",
+  "version": "1.0.0",
+  "description": "Centro de Control Global para servidores Multipass",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
+
+EXPLICACIÓN LÍNEA POR LÍNEA:
+----------------------------
+
+1. "name": "dashboard-servidores"
+   → Es el nombre único del proyecto. Se usa para identificarlo si lo publicas
+     en npm (el registro de paquetes de Node.js).
+
+2. "version": "1.0.0"
+   → Sigue el formato "Semántico" (MAJOR.MINOR.PATCH):
+     - MAJOR: Cambios incompatibles con versiones anteriores
+     - MINOR: Nuevas funcionalidades compatibles
+     - PATCH: Corrección de errores
+
+3. "description": "Centro de Control Global..."
+   → Breve descripción del propósito del proyecto.
+
+4. "main": "backend/index.js"
+   → Punto de entrada principal de la aplicación. Cuando alguien importe este
+     proyecto como módulo, Node.js buscará este archivo.
+
+5. "scripts": { "start": "node backend/index.js" }
+   → Scripts personalizados que puedes ejecutar con npm:
+     - `npm start` ejecutará `node backend/index.js`
+     - Puedes añadir más scripts como "test", "dev", "build", etc.
+
+6. "dependencies": { ... }
+   → Lista de paquetes externos que el proyecto NECESITA para funcionar:
+     - "cors": Permite que el frontend pueda comunicarse con el backend desde
+               diferentes orígenes (Cross-Origin Resource Sharing).
+     - "express": Framework web minimalista para crear APIs y servir archivos.
+
+NOTA SOBRE node_modules:
+------------------------
+Cuando ejecutas `npm install`, npm lee package.json y descarga todas las 
+dependencias listadas a la carpeta `node_modules/`. Esta carpeta NO se sube a
+Git porque puede regenerarse con un simple `npm install`.
+
+
+================================================================================
+SECCIÓN 2: FUNCIONES AVANZADAS EN script.js (FRONTEND)
+================================================================================
+
+El archivo script.js maneja toda la lógica del lado del cliente (navegador).
+Aquí explico las funciones más complejas e importantes:
+
+--------------------------------------------------------------------------------
+FUNCIÓN 1: initializeCharts() - Creación de Gráficas con Chart.js
+--------------------------------------------------------------------------------
+
+function initializeCharts() {
+    Object.keys(CONFIG.SERVERS).forEach(id => {
+        const ctx = document.getElementById(`chart-${id}`);
+        if (!ctx) return;
+
+        state.charts[id] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'RAM',
+                        data: [],
+                        borderColor: '#00f0ff',
+                        backgroundColor: 'rgba(0,240,255,0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'CPU',
+                        data: [],
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0,255,136,0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { color: '#8899b3', font: { size: 9 }, boxWidth: 10 } }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: true,
+                        min: 0,
+                        max: 100,
+                        grid: { color: 'rgba(136,153,179,0.1)' },
+                        ticks: { color: '#556680', font: { size: 9 }, stepSize: 50, callback: v => v + '%' }
+                    }
+                }
+            }
+        });
+    });
+}
+
+EXPLICACIÓN:
+- Object.keys(CONFIG.SERVERS).forEach(id => {...})
+  Recorre todos los servidores definidos en CONFIG (1, 2, 3, 4).
+
+- document.getElementById(`chart-${id}`)
+  Obtiene el elemento <canvas> donde se dibujará la gráfica.
+
+- new Chart(ctx, {...})
+  Crea una instancia de Chart.js con configuración:
+  · type: 'line' → Gráfica de líneas
+  · datasets: Array con 2 líneas (RAM y CPU)
+  · fill: true → Rellena el área bajo la línea
+  · tension: 0.4 → Curva suavizada (0 = rectas, 1 = muy curveado)
+  · pointRadius: 0 → Sin puntos visibles (línea limpia)
+  · animation: false → Desactivada para rendimiento
+
+CONCEPTO AVANZADO: Template Literals
+  `chart-${id}` usa backticks (`) para insertar variables dentro de strings.
+  Es equivalente a: "chart-" + id
+
+--------------------------------------------------------------------------------
+FUNCIÓN 2: updateServerStats() - Polling Asíncrono con Control de Estado
+--------------------------------------------------------------------------------
+
+async function updateServerStats(id) {
+    // Si estamos encendiendo/apagando, no actualizamos para evitar saltos visuales raros
+    if (state.pendingAction[id]) return;
+
+    const data = await fetchServerStats(id);
+    updateServerUI(id, data);
+
+    // Actualizar gráfica si está online
+    if (data.status === 'online' && data.memory && data.cpu) {
+        updateChart(id, data.memory.percentage || 0, data.cpu.usage || 0);
+    } else {
+        updateChart(id, 0, 0);
+    }
+}
+
+EXPLICACIÓN:
+- async/await: Esta función es ASÍNCRONA, lo que significa que puede "pausarse"
+  mientras espera respuestas del servidor sin bloquear el navegador.
+
+- state.pendingAction[id]: Patrón de "bloqueo local" para evitar que el polling
+  interfiera mientras se está ejecutando una acción (encender/apagar).
+  Si hay una acción pendiente, la función retorna inmediatamente (return).
+
+- await fetchServerStats(id): Espera a que llegue la respuesta del backend.
+  JavaScript continúa ejecutando otras cosas mientras tanto.
+
+CONCEPTOS AVANZADOS:
+  · Polling: Es la técnica de preguntar repetidamente al servidor por datos
+    nuevos (cada segundo en este caso).
+  · Race Condition Prevention: El if (state.pendingAction[id]) evita condiciones
+    de carrera donde el polling podría mostrar datos incorrectos durante una
+    transición de estado.
+
+--------------------------------------------------------------------------------
+FUNCIÓN 3: stopServer() - Manejo de Estados y Promesas
+--------------------------------------------------------------------------------
+
+async function stopServer(id) {
+    if (state.pendingAction[id]) return;
+    state.pendingAction[id] = 'stopping';
+
+    const btnStop = document.getElementById(`btn-stop-${id}`);
+    if (btnStop) btnStop.disabled = true;
+
+    const cityName = CONFIG.SERVERS[id].city;
+    showToast('warning', `🛑 Apagando Servidor de ${cityName}...`);
+
+    try {
+        const r = await fetch(`${CONFIG.API_BASE}/api/server/${id}/stop`, { method: 'POST' });
+        const d = await r.json();
+
+        if (d.success) {
+            showToast('success', `💤 Servidor de ${cityName} apagado`);
+            state.servers[id] = { status: 'offline' };
+            clearChart(id);
+
+            setTimeout(() => {
+                state.pendingAction[id] = null;
+                updateServerUI(id, { status: 'offline' });
+            }, 1000);
+        } else {
+            showToast('error', d.error);
+            state.pendingAction[id] = null;
+        }
+    } catch {
+        showToast('error', 'Error de conexión');
+        state.pendingAction[id] = null;
+    }
+}
+
+EXPLICACIÓN:
+- state.pendingAction[id] = 'stopping'
+  Marca el servidor como "en proceso de apagado" para bloquear el polling.
+
+- try/catch: Estructura para manejar errores. Si algo falla dentro del try,
+  el código salta al catch y maneja el error elegantemente.
+
+- await fetch(..., { method: 'POST' })
+  Realiza una petición HTTP POST al backend. POST se usa para acciones que
+  modifican el estado del servidor (a diferencia de GET que solo lee datos).
+
+- setTimeout(() => {...}, 1000)
+  Ejecuta el código interno después de 1000ms (1 segundo). Esto da tiempo a
+  que el backend complete la operación antes de actualizar la UI.
+
+PATRÓN IMPORTANTE: "Optimistic UI Update"
+  La función actualiza la UI inmediatamente (showToast, clearChart) ANTES de
+  que el servidor confirme. Esto hace que la app se sienta más rápida.
+
+--------------------------------------------------------------------------------
+FUNCIÓN 4: openServerModal() - Manipulación del DOM y Estado Global
+--------------------------------------------------------------------------------
+
+function openServerModal(id) {
+    currentModalServerId = id;
+    const modal = document.getElementById('serverModal');
+    const serverConfig = CONFIG.SERVERS[id];
+    const serverState = state.servers[id];
+
+    if (!modal || !serverConfig) return;
+
+    // Cargar datos en el modal
+    const card = document.querySelector(`[data-server-id="${id}"]`);
+    const serverName = card?.querySelector('.server-name')?.textContent || `Servidor ${id}`;
+    const serverIP = card?.querySelector('.server-ip')?.textContent || 'N/A';
+    const isOnline = serverState?.status === 'online';
+
+    document.getElementById('modalServerName').textContent = serverName;
+    document.getElementById('modalServerIP').textContent = serverIP;
+
+    const statusIndicator = document.getElementById('modalStatus');
+    if (statusIndicator) {
+        statusIndicator.className = `modal-status-indicator ${isOnline ? 'online' : 'offline'}`;
+    }
+
+    initModalChart(id);
+    loadSchedule(id);
+    modal.classList.add('active');
+}
+
+EXPLICACIÓN:
+- currentModalServerId = id
+  Variable global que guarda qué servidor está abierto en el modal.
+
+- document.querySelector(`[data-server-id="${id}"]`)
+  Selector CSS avanzado que busca elementos con atributos data-*. 
+  Es más flexible que getElementById.
+
+- card?.querySelector(...)
+  El operador ?. (Optional Chaining) es JavaScript moderno:
+  - Si card existe, ejecuta querySelector
+  - Si card es null/undefined, retorna undefined sin error
+
+- || `Servidor ${id}`
+  Operador OR para valor por defecto. Si el primer valor es falsy (null, 
+  undefined, ''), usa el segundo.
+
+- modal.classList.add('active')
+  Añade la clase CSS 'active' que dispara la animación de apertura del modal.
+
+
+================================================================================
+SECCIÓN 3: FUNCIONES AVANZADAS EN backend/index.js
+================================================================================
+
+El backend es el "cerebro" del sistema. Ejecuta comandos en las VMs de Multipass
+y expone una API REST para que el frontend pueda controlarlo.
+
+--------------------------------------------------------------------------------
+FUNCIÓN 1: getServerStatus() - Promesas y Ejecución de Comandos del Sistema
+--------------------------------------------------------------------------------
+
+function getServerStatus(vmName) {
+  return new Promise((resolve) => {
+    exec(`multipass info ${vmName} --format json`, (error, stdout, stderr) => {
+      if (error || stderr) {
+        resolve('Stopped');
+      } else {
+        try {
+          const info = JSON.parse(stdout);
+          const vmInfo = info.info[vmName];
+          if (vmInfo && (vmInfo.state === 'Running' || vmInfo.state === 'Suspended')) {
+            return resolve(vmInfo.state);
+          }
+          resolve('Stopped');
+        } catch (e) {
+          resolve('Stopped');
+        }
+      }
+    });
+  });
+}
+
+EXPLICACIÓN:
+- return new Promise((resolve) => {...})
+  Crea una Promesa, que es un objeto que representa un valor futuro.
+  Permite usar async/await en quien llame a esta función.
+
+- exec(`multipass info ${vmName} --format json`, callback)
+  Ejecuta un comando en la terminal del sistema operativo.
+  - Primer argumento: El comando a ejecutar
+  - Segundo argumento: Función callback que recibe (error, stdout, stderr)
+
+- JSON.parse(stdout)
+  Convierte el texto JSON que devuelve Multipass en un objeto JavaScript.
+
+- resolve(valor)
+  "Resuelve" la promesa con un valor. Es como decir "aquí está el resultado".
+
+PATRÓN IMPORTANTE: Graceful Degradation
+  Si algo falla (error, stderr, JSON inválido), la función SIEMPRE retorna
+  'Stopped' en lugar de lanzar un error. Esto hace el sistema más robusto.
+
+--------------------------------------------------------------------------------
+FUNCIÓN 2: Endpoint GET /api/server/:id/stats - API REST con Parámetros
+--------------------------------------------------------------------------------
+
+app.get('/api/server/:id/stats', async (req, res) => {
+  const { id } = req.params;
+  const server = CONFIG.SERVERS[id];
+
+  if (shutdownLocks[id]) {
+    return res.json({
+      status: 'offline',
+      serverName: server.name,
+      ip: server.ip
+    });
+  }
+
+  try {
+    const status = await getServerStatus(server.multipassName);
+
+    if (status !== 'Running') {
+      return res.json({
+        status: 'offline',
+        serverName: server.name,
+        ip: server.ip
+      });
+    }
+
+    const [freeOut, topOut] = await Promise.all([
+      runMultipassCommand(server.multipassName, 'free -m'),
+      runMultipassCommand(server.multipassName, 'top -bn1 | head -5')
+    ]);
+
+    res.json({
+      status: 'online',
+      serverName: server.name,
+      ip: server.ip,
+      memory: parseMemory(freeOut),
+      cpu: parseCPU(topOut)
+    });
+
+  } catch (error) {
+    res.json({
+      status: 'offline',
+      serverName: server.name || 'Desconocido',
+      error: 'Offline'
+    });
+  }
+});
+
+EXPLICACIÓN:
+- app.get('/api/server/:id/stats', ...)
+  Define un endpoint HTTP GET. El :id es un parámetro dinámico.
+  URL: /api/server/1/stats → id = "1"
+
+- const { id } = req.params
+  Desestructuración para extraer el parámetro de la URL.
+
+- shutdownLocks[id]
+  Sistema de "candados" para evitar que el polling "despierte" una VM que
+  está siendo apagada. Si hay candado, devuelve offline inmediatamente.
+
+- await Promise.all([...])
+  CONCEPTO AVANZADO: Ejecuta múltiples promesas EN PARALELO y espera a que
+  TODAS terminen. Mucho más rápido que ejecutarlas una tras otra.
+
+  Esto ejecuta simultáneamente:
+  1. `free -m` (información de memoria)
+  2. `top -bn1 | head -5` (información de CPU)
+
+- res.json({...})
+  Envía una respuesta JSON al cliente (frontend).
+
+--------------------------------------------------------------------------------
+FUNCIÓN 3: Sistema CRON - setInterval para Programación Automática
+--------------------------------------------------------------------------------
+
+setInterval(async () => {
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  for (const [id, schedule] of Object.entries(schedules)) {
+    const server = CONFIG.SERVERS[id];
+    if (!server) continue;
+
+    try {
+      const status = await getServerStatus(server.multipassName);
+
+      // ¿Toca ENCENDER?
+      if (schedule.start === currentTime && status !== 'Running' && !shutdownLocks[id]) {
+        logSystem('⏰', `Ejecutando tarea programada: ENCENDIENDO ${server.name}...`);
+        await runLocalMultipass(`multipass start ${server.multipassName}`);
+        logSystem('✅', `${server.name} encendido por SCHEDULER.`);
+      }
+
+      // ¿Toca APAGAR?
+      if (schedule.stop === currentTime && status === 'Running' && !shutdownLocks[id]) {
+        logSystem('⏰', `Ejecutando tarea programada: APAGANDO ${server.name}...`);
+        shutdownLocks[id] = true;
+        setTimeout(() => { delete shutdownLocks[id]; }, 15000);
+        await runLocalMultipass(`multipass suspend ${server.multipassName}`);
+        logSystem('💤', `${server.name} suspendido por SCHEDULER.`);
+      }
+    } catch (error) {
+      logSystem('❌', `Error en scheduler para ${server.name}: ${error.message}`);
+    }
+  }
+}, 30000);
+
+EXPLICACIÓN:
+- setInterval(callback, 30000)
+  Ejecuta la función callback cada 30000ms (30 segundos). Es como un "cron job"
+  pero dentro de Node.js.
+
+- new Date().toLocaleTimeString('es-ES', {...})
+  Obtiene la hora actual formateada como "HH:MM" en formato de 24 horas.
+  Ejemplo: "14:30"
+
+- for (const [id, schedule] of Object.entries(schedules))
+  Itera sobre el objeto schedules convirtiendo cada par clave-valor en un array.
+  Ejemplo: schedules = { '1': { start: '08:00', stop: '20:00' } }
+  → Primer loop: id='1', schedule={ start: '08:00', stop: '20:00' }
+
+- schedule.start === currentTime
+  Compara la hora programada con la hora actual. Si coinciden Y el servidor
+  está apagado, lo enciende.
+
+- shutdownLocks[id] = true
+  Activa el candado antes de apagar para evitar que el polling interfiera.
+
+- setTimeout(() => { delete shutdownLocks[id]; }, 15000)
+  Libera el candado después de 15 segundos.
+
+CONCEPTO AVANZADO: for...of con await
+  Dentro de un for...of, puedes usar await, lo que hace que cada iteración
+  espere a la anterior. Esto evita sobrecargar el sistema con demasiadas
+  operaciones simultáneas.
+
+--------------------------------------------------------------------------------
+FUNCIÓN 4: Endpoint POST /api/server/:id/stop - Hibernación con Fallback
+--------------------------------------------------------------------------------
+
+app.post('/api/server/:id/stop', async (req, res) => {
+  const { id } = req.params;
+  const server = CONFIG.SERVERS[id];
+
+  shutdownLocks[id] = true;
+  logSystem('🌙', `Suspendiendo ${server.name} (Hibernación)...`);
+
+  setTimeout(() => {
+    delete shutdownLocks[id];
+  }, 15000);
+
+  try {
+    await runLocalMultipass(`multipass suspend ${server.multipassName}`);
+    logSystem('💤', `${server.name} está HIBERNANDO correctamente.`);
+    res.json({ success: true, message: 'Suspendiendo (Modo Rápido)...' });
+
+  } catch (error) {
+    logSystem('⚠️', `Fallo al suspender ${server.name}, intentando apagado forzoso...`);
+    try {
+      await runLocalMultipass(`multipass stop ${server.multipassName}`);
+      logSystem('🔌', `${server.name} APAGADO (Forzado).`);
+      res.json({ success: true, message: 'Apagando (Force)...' });
+    } catch (err) {
+      logSystem('❌', `Error crítico apagando ${server.name}: ${err.message}`);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+});
+
+EXPLICACIÓN:
+- app.post('/api/server/:id/stop', ...)
+  Define un endpoint HTTP POST (usado para acciones que modifican estado).
+
+- multipass suspend vs multipass stop
+  · suspend: "Congela" la VM en su estado actual (más rápido de reanudar)
+  · stop: Apaga completamente la VM (más lento de iniciar después)
+
+- Patrón TRY-CATCH Anidado (Fallback)
+  1. Primero intenta SUSPEND (hibernación rápida)
+  2. Si falla, intenta STOP (apagado completo)
+  3. Si ambos fallan, devuelve error 500
+
+  Esto hace el sistema más robusto - siempre intenta una alternativa antes
+  de reportar un fallo.
+
+- res.status(500).json({...})
+  Envía código HTTP 500 (Internal Server Error) junto con el mensaje de error.
+
+
+================================================================================
+SECCIÓN 4: EL SISTEMA SCHEDULER COMPLETO (PROGRAMACIÓN AUTOMÁTICA)
+================================================================================
+
+El Scheduler es un sistema que permite programar el encendido y apagado 
+automático de servidores a horas específicas. Funciona como un "cron job"
+integrado en Node.js. Tiene 4 componentes principales:
+
+--------------------------------------------------------------------------------
+COMPONENTE 1: Variable de Almacenamiento en Memoria
+--------------------------------------------------------------------------------
+
+const schedules = {};
+// Formato: { '1': { start: '08:00', stop: '20:00' }, '2': { start: '', stop: '' } }
+
+EXPLICACIÓN:
+- Es un objeto JavaScript que actúa como "base de datos en memoria".
+- La clave es el ID del servidor ('1', '2', '3', '4').
+- El valor es un objeto con la hora de encendido (start) y apagado (stop).
+
+IMPORTANTE: Al estar en memoria, los horarios se PIERDEN si reinicias el servidor.
+Para persistencia real, necesitarías guardarlos en un archivo JSON o base de datos.
+
+EJEMPLO DE CONTENIDO EN EJECUCIÓN:
+{
+  '1': { start: '08:00', stop: '20:00' },   // Madrid: enciende a las 8am, apaga a las 8pm
+  '2': { start: '07:00', stop: '19:00' },   // Oslo: enciende a las 7am, apaga a las 7pm
+  '3': { start: '', stop: '22:00' }          // Beijing: solo apagado programado
+}
+
+--------------------------------------------------------------------------------
+COMPONENTE 2: Endpoint POST para GUARDAR Programación
+--------------------------------------------------------------------------------
+
+app.post('/api/server/:id/schedule', (req, res) => {
+  const { id } = req.params;
+  const { start, stop } = req.body;
+
+  if (!CONFIG.SERVERS[id]) {
+    return res.status(404).json({ success: false, error: 'Servidor no encontrado' });
+  }
+
+  schedules[id] = { start: start || '', stop: stop || '' };
+  logSystem('📅', `Programación guardada para servidor ${id}: Encender=${start || 'N/A'}, Apagar=${stop || 'N/A'}`);
+  
+  res.json({ success: true, message: 'Programación guardada', schedule: schedules[id] });
+});
+
+EXPLICACIÓN LÍNEA POR LÍNEA:
+
+1. app.post('/api/server/:id/schedule', ...)
+   - Define una ruta HTTP POST (usada para crear/modificar datos)
+   - :id es un "parámetro de ruta" que captura el ID del servidor
+
+2. const { id } = req.params
+   - Extrae el ID de la URL usando desestructuración
+   - Si la URL es /api/server/1/schedule, entonces id = '1'
+
+3. const { start, stop } = req.body
+   - Extrae los datos enviados por el frontend en el cuerpo de la petición
+   - El frontend envía: { start: '08:00', stop: '20:00' }
+
+4. schedules[id] = { start: start || '', stop: stop || '' }
+   - Guarda los horarios en el objeto schedules
+   - El || '' proporciona un valor por defecto (string vacío) si no se envía
+
+5. logSystem('📅', ...)
+   - Registra en la terminal del backend que se guardó la programación
+
+PETICIÓN DE EJEMPLO (desde el frontend):
+fetch('/api/server/1/schedule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ start: '08:00', stop: '20:00' })
+});
+
+--------------------------------------------------------------------------------
+COMPONENTE 3: Endpoint GET para OBTENER Programación
+--------------------------------------------------------------------------------
+
+app.get('/api/server/:id/schedule', (req, res) => {
+  const { id } = req.params;
+
+  if (!CONFIG.SERVERS[id]) {
+    return res.status(404).json({ success: false, error: 'Servidor no encontrado' });
+  }
+
+  res.json({ success: true, schedule: schedules[id] || { start: '', stop: '' } });
+});
+
+EXPLICACIÓN:
+- app.get indica que es una petición de LECTURA (no modifica nada)
+- schedules[id] || { start: '', stop: '' }
+  Si no hay programación guardada para ese servidor, devuelve valores vacíos
+  en lugar de undefined (esto evita errores en el frontend)
+
+USO EN EL FRONTEND (al abrir el modal):
+  async function loadSchedule(id) {
+      const res = await fetch(`/api/server/${id}/schedule`);
+      const data = await res.json();
+      document.getElementById('scheduleStart').value = data.schedule.start;
+      document.getElementById('scheduleStop').value = data.schedule.stop;
+  }
+
+--------------------------------------------------------------------------------
+COMPONENTE 4: El CRON - Motor de Ejecución Automática (cada 30 segundos)
+--------------------------------------------------------------------------------
+
+setInterval(async () => {
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  for (const [id, schedule] of Object.entries(schedules)) {
+    const server = CONFIG.SERVERS[id];
+    if (!server) continue;
+
+    try {
+      const status = await getServerStatus(server.multipassName);
+
+      // ¿Toca ENCENDER?
+      if (schedule.start === currentTime && status !== 'Running' && !shutdownLocks[id]) {
+        logSystem('⏰', `Ejecutando tarea programada: ENCENDIENDO ${server.name}...`);
+        await runLocalMultipass(`multipass start ${server.multipassName}`);
+        logSystem('✅', `${server.name} encendido por SCHEDULER.`);
+      }
+
+      // ¿Toca APAGAR?
+      if (schedule.stop === currentTime && status === 'Running' && !shutdownLocks[id]) {
+        logSystem('⏰', `Ejecutando tarea programada: APAGANDO ${server.name}...`);
+        shutdownLocks[id] = true;
+        setTimeout(() => { delete shutdownLocks[id]; }, 15000);
+        await runLocalMultipass(`multipass suspend ${server.multipassName}`);
+        logSystem('💤', `${server.name} suspendido por SCHEDULER.`);
+      }
+    } catch (error) {
+      logSystem('❌', `Error en scheduler para ${server.name}: ${error.message}`);
+    }
+  }
+}, 30000);
+
+EXPLICACIÓN DETALLADA:
+
+1. setInterval(async () => {...}, 30000)
+   - Ejecuta la función cada 30000 milisegundos (30 segundos)
+   - async permite usar await dentro del intervalo
+   - ¿Por qué 30 segundos? Es un balance entre precisión y rendimiento
+
+2. now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })
+   - Formatea la hora como "HH:MM" (ej: "14:30")
+   - hour12: false = formato 24 horas (no AM/PM)
+
+3. for (const [id, schedule] of Object.entries(schedules))
+   - Object.entries() convierte el objeto en array de pares [clave, valor]
+   - La desestructuración [id, schedule] extrae ambos valores
+
+4. CONDICIÓN DE ENCENDIDO:
+   schedule.start === currentTime   // ¿Es la hora programada?
+   && status !== 'Running'          // ¿El servidor está apagado?
+   && !shutdownLocks[id]            // ¿No hay un apagado en curso?
+
+5. CONDICIÓN DE APAGADO:
+   schedule.stop === currentTime    // ¿Es la hora programada?
+   && status === 'Running'          // ¿El servidor está encendido?
+   && !shutdownLocks[id]            // ¿No hay otra operación en curso?
+
+6. shutdownLocks[id] = true + setTimeout
+   - Activa un "candado" antes de apagar
+   - El candado se libera automáticamente después de 15 segundos
+
+--------------------------------------------------------------------------------
+DIAGRAMA DE FLUJO DEL SCHEDULER:
+--------------------------------------------------------------------------------
+
+    ┌─────────────────────────────────────────┐
+    │         setInterval (cada 30s)          │
+    └─────────────────────────────────────────┘
+                        │
+                        ▼
+    ┌─────────────────────────────────────────┐
+    │       Obtener hora actual (HH:MM)       │
+    └─────────────────────────────────────────┘
+                        │
+                        ▼
+    ┌─────────────────────────────────────────┐
+    │   Para cada servidor en schedules:      │
+    └─────────────────────────────────────────┘
+                        │
+            ┌───────────┴───────────┐
+            ▼                       ▼
+    ┌───────────────┐       ┌───────────────┐
+    │ ¿start=hora?  │       │ ¿stop=hora?   │
+    │ ¿status≠Run?  │       │ ¿status=Run?  │
+    │ ¿no candado?  │       │ ¿no candado?  │
+    └───────────────┘       └───────────────┘
+            │ SÍ                    │ SÍ
+            ▼                       ▼
+    ┌───────────────┐       ┌───────────────┐
+    │multipass start│       │activar candado│
+    │ + log ✅      │       │multipass susp.│
+    └───────────────┘       │ + log 💤      │
+                            └───────────────┘
+
+--------------------------------------------------------------------------------
+FLUJO COMPLETO: Frontend → Backend → Scheduler
+--------------------------------------------------------------------------------
+
+PASO 1: USUARIO abre modal de servidor Madrid
+   → Frontend hace GET /api/server/1/schedule
+   → Backend devuelve { start: '', stop: '' }
+   → Modal muestra inputs vacíos
+
+PASO 2: USUARIO escribe 08:00 y 20:00, pulsa "Guardar"
+   → Frontend hace POST /api/server/1/schedule con { start: '08:00', stop: '20:00' }
+   → Backend guarda en schedules['1'] = { start: '08:00', stop: '20:00' }
+   → Backend responde success: true
+   → Frontend muestra toast "Programación guardada"
+
+PASO 3: A las 08:00 de la mañana...
+   → El setInterval se ejecuta
+   → currentTime = '08:00'
+   → schedule.start ('08:00') === currentTime ('08:00') ✓
+   → status !== 'Running' ✓ (el servidor está apagado)
+   → !shutdownLocks['1'] ✓ (no hay candado)
+   → Ejecuta: multipass start servidor-1
+   → Log: "⏰ Ejecutando tarea programada: ENCENDIENDO Madrid..."
+   → Log: "✅ Madrid encendido por SCHEDULER."
+
+PASO 4: A las 20:00 de la noche...
+   → currentTime = '20:00'
+   → schedule.stop ('20:00') === currentTime ('20:00') ✓
+   → status === 'Running' ✓ (el servidor está encendido)
+   → Activa candado, ejecuta suspend
+   → Log: "⏰ Ejecutando tarea programada: APAGANDO Madrid..."
+   → Log: "💤 Madrid suspendido por SCHEDULER."
+
+
+================================================================================
+SECCIÓN 5: CONCEPTOS CLAVE UTILIZADOS
+================================================================================
+
+1. ASYNC/AWAIT
+   Sintaxis moderna para manejar código asíncrono. Permite escribir código
+   que "espera" resultados sin bloquear el programa.
+
+2. PROMESAS (Promises)
+   Objetos que representan valores que estarán disponibles en el futuro.
+   Estados: Pending → Fulfilled (éxito) o Rejected (error)
+
+3. API REST
+   Patrón de diseño para APIs web:
+   - GET: Obtener datos (no modifica nada)
+   - POST: Crear/ejecutar acciones
+   - PUT: Actualizar datos existentes
+   - DELETE: Eliminar datos
+
+4. POLLING
+   Técnica de consultar repetidamente un servidor para obtener actualizaciones.
+   Alternativa más simple a WebSockets.
+
+5. ESTADO GLOBAL (State Management)
+   Uso de un objeto `state` para mantener el estado de la aplicación en un
+   solo lugar, facilitando la sincronización entre componentes.
+
+6. LOCKS (Candados)
+   Mecanismo para evitar condiciones de carrera, impidiendo que múltiples
+   operaciones modifiquen el mismo recurso simultáneamente.
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

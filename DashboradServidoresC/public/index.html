@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌐 Centro de Control Global</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body data-theme="dark">
+  <div class="app">
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">🌐</span>
+          <div class="logo-text">
+            <h1>Centro de Control Global</h1>
+            <span class="logo-subtitle">Sistema de Monitoreo en Tiempo Real</span>
+          </div>
+        </div>
+        <div class="header-info">
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
+          </div>
+          <div class="master-clock">
+            <span class="clock-label">UTC</span>
+            <span class="clock-time" id="utcClock">--:--:--</span>
+          </div>
+          <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
+            <span class="theme-icon" id="themeIcon">☀️</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-content">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar servidor..." oninput="filterServers()">
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Estado:</label>
+          <select id="filterStatus" onchange="filterServers()">
+            <option value="all">Todos</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Región:</label>
+          <select id="filterRegion" onchange="filterServers()">
+            <option value="all">Todas</option>
+            <option value="europa">Europa</option>
+            <option value="asia">Asia</option>
+            <option value="america">América</option>
+          </select>
+        </div>
+
+        <div class="stats-summary">
+          <span class="summary-item">
+            <span class="summary-dot online"></span>
+            <span id="onlineCount">0</span> Online
+          </span>
+          <span class="summary-item">
+            <span class="summary-dot offline"></span>
+            <span id="offlineCount">0</span> Offline
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <main class="main-content">
+      <div class="servers-grid" id="serversGrid">
+
+        <article class="server-card" data-server-id="1" data-region="europa">
+          <div class="card-header">
+            <div class="server-info">
+              <span class="status-indicator offline" id="status-1"></span>
+              <div class="server-details">
+                <h2 class="server-name" id="name-1">🇪🇸 Servidor Madrid</h2>
+                <span class="server-ip">192.168.2.2</span>
+              </div>
+            </div>
+            <span class="status-badge offline" id="badge-1">Offline</span>
+          </div>
+          <div class="world-clock">
+            <div class="clock-city">Madrid, España</div>
+            <div class="clock-display" id="clock-1">--:--:--</div>
+            <div class="clock-timezone">Europe/Madrid</div>
+          </div>
+          <div class="card-body">
+            <div class="stats-container">
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">💾</span><span class="stat-label">RAM</span></div>
+                <div class="stat-value"><span class="stat-number" id="ram-value-1">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="ram-details-1">-- / -- MB</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">⚡</span><span class="stat-label">CPU</span></div>
+                <div class="stat-value"><span class="stat-number" id="cpu-value-1">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="cpu-details-1">Uso actual</div>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="chart-1"></canvas></div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-start" id="btn-start-1" onclick="startServer('1')"><span class="btn-icon">▶</span>
+              Encender</button>
+            <button class="btn btn-stop" id="btn-stop-1" onclick="stopServer('1')"><span class="btn-icon">⏹</span>
+              Apagar</button>
+            <button class="btn btn-stress" id="btn-stress-1" onclick="stressTest('1')"><span class="btn-icon">⚡</span>
+              Test CPU</button>
+          </div>
+        </article>
+
+        <article class="server-card" data-server-id="2" data-region="europa">
+          <div class="card-header">
+            <div class="server-info">
+              <span class="status-indicator offline" id="status-2"></span>
+              <div class="server-details">
+                <h2 class="server-name" id="name-2">🇳🇴 Servidor Oslo</h2>
+                <span class="server-ip">192.168.2.3</span>
+              </div>
+            </div>
+            <span class="status-badge offline" id="badge-2">Offline</span>
+          </div>
+          <div class="world-clock">
+            <div class="clock-city">Oslo, Noruega</div>
+            <div class="clock-display" id="clock-2">--:--:--</div>
+            <div class="clock-timezone">Europe/Oslo</div>
+          </div>
+          <div class="card-body">
+            <div class="stats-container">
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">💾</span><span class="stat-label">RAM</span></div>
+                <div class="stat-value"><span class="stat-number" id="ram-value-2">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="ram-details-2">-- / -- MB</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">⚡</span><span class="stat-label">CPU</span></div>
+                <div class="stat-value"><span class="stat-number" id="cpu-value-2">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="cpu-details-2">Uso actual</div>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="chart-2"></canvas></div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-start" id="btn-start-2" onclick="startServer('2')"><span class="btn-icon">▶</span>
+              Encender</button>
+            <button class="btn btn-stop" id="btn-stop-2" onclick="stopServer('2')"><span class="btn-icon">⏹</span>
+              Apagar</button>
+            <button class="btn btn-stress" id="btn-stress-2" onclick="stressTest('2')"><span class="btn-icon">⚡</span>
+              Test CPU</button>
+          </div>
+        </article>
+
+        <article class="server-card" data-server-id="3" data-region="asia">
+          <div class="card-header">
+            <div class="server-info">
+              <span class="status-indicator offline" id="status-3"></span>
+              <div class="server-details">
+                <h2 class="server-name" id="name-3">🇨🇳 Servidor Beijing</h2>
+                <span class="server-ip">192.168.2.4</span>
+              </div>
+            </div>
+            <span class="status-badge offline" id="badge-3">Offline</span>
+          </div>
+          <div class="world-clock">
+            <div class="clock-city">Beijing, China</div>
+            <div class="clock-display" id="clock-3">--:--:--</div>
+            <div class="clock-timezone">Asia/Shanghai</div>
+          </div>
+          <div class="card-body">
+            <div class="stats-container">
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">💾</span><span class="stat-label">RAM</span></div>
+                <div class="stat-value"><span class="stat-number" id="ram-value-3">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="ram-details-3">-- / -- MB</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">⚡</span><span class="stat-label">CPU</span></div>
+                <div class="stat-value"><span class="stat-number" id="cpu-value-3">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="cpu-details-3">Uso actual</div>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="chart-3"></canvas></div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-start" id="btn-start-3" onclick="startServer('3')"><span class="btn-icon">▶</span>
+              Encender</button>
+            <button class="btn btn-stop" id="btn-stop-3" onclick="stopServer('3')"><span class="btn-icon">⏹</span>
+              Apagar</button>
+            <button class="btn btn-stress" id="btn-stress-3" onclick="stressTest('3')"><span class="btn-icon">⚡</span>
+              Test CPU</button>
+          </div>
+        </article>
+
+        <article class="server-card" data-server-id="4" data-region="america">
+          <div class="card-header">
+            <div class="server-info">
+              <span class="status-indicator offline" id="status-4"></span>
+              <div class="server-details">
+                <h2 class="server-name" id="name-4">🇨🇴 Servidor Bogotá</h2>
+                <span class="server-ip">192.168.2.5</span>
+              </div>
+            </div>
+            <span class="status-badge offline" id="badge-4">Offline</span>
+          </div>
+          <div class="world-clock">
+            <div class="clock-city">Bogotá, Colombia</div>
+            <div class="clock-display" id="clock-4">--:--:--</div>
+            <div class="clock-timezone">America/Bogota</div>
+          </div>
+          <div class="card-body">
+            <div class="stats-container">
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">💾</span><span class="stat-label">RAM</span></div>
+                <div class="stat-value"><span class="stat-number" id="ram-value-4">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="ram-details-4">-- / -- MB</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-header"><span class="stat-icon">⚡</span><span class="stat-label">CPU</span></div>
+                <div class="stat-value"><span class="stat-number" id="cpu-value-4">--</span><span
+                    class="stat-unit">%</span></div>
+                <div class="stat-details" id="cpu-details-4">Uso actual</div>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="chart-4"></canvas></div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-start" id="btn-start-4" onclick="startServer('4')"><span class="btn-icon">▶</span>
+              Encender</button>
+            <button class="btn btn-stop" id="btn-stop-4" onclick="stopServer('4')"><span class="btn-icon">⏹</span>
+              Apagar</button>
+            <button class="btn btn-stress" id="btn-stress-4" onclick="stressTest('4')"><span class="btn-icon">⚡</span>
+              Test CPU</button>
+          </div>
+        </article>
+
+      </div>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Modal de Detalle del Servidor -->
+    <div class="modal-overlay" id="serverModal" onclick="closeServerModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeServerModal()">✕</button>
+
+        <div class="modal-header">
+          <span class="modal-status-indicator offline" id="modalStatus"></span>
+          <div class="modal-title-group">
+            <h2 class="modal-server-name" id="modalServerName">Servidor</h2>
+            <span class="modal-server-ip" id="modalServerIP">192.168.x.x</span>
+          </div>
+        </div>
+
+        <div class="modal-chart-container">
+          <canvas id="modalChart"></canvas>
+        </div>
+
+        <div class="schedule-panel">
+          <h3>⏰ Programación Automática</h3>
+          <p class="schedule-description">Define las horas de encendido/apagado automático</p>
+
+          <div class="schedule-inputs">
+            <div class="schedule-input-group">
+              <label for="scheduleStart">🌅 Encendido</label>
+              <input type="time" id="scheduleStart" class="schedule-time-input">
+            </div>
+            <div class="schedule-input-group">
+              <label for="scheduleStop">🌙 Apagado</label>
+              <input type="time" id="scheduleStop" class="schedule-time-input">
+            </div>
+          </div>
+
+          <div class="schedule-actions">
+            <button class="btn btn-start" onclick="saveSchedule()">
+              <span class="btn-icon">💾</span> Guardar Programación
+            </button>
+            <button class="btn btn-stop" onclick="clearSchedule()">
+              <span class="btn-icon">🗑️</span> Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
