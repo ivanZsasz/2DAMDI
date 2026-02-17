@@ -1,0 +1,26 @@
+Actúa como un desarrollador experto en interfaces web y PWAs. Necesito crear una aplicación web SPA (Single Page Application) para 'Gestión de Finanzas Personales' utilizando HTML5, CSS3 (diseño moderno y responsivo) y Javascript (ES6+). No quiero usar frameworks complejos como React, solo JS puro modular para facilitar el hosting.
+
+Configuración de Firebase: Utiliza esta configuración para inicializar la app (Asegúrate de importar las librerías de Firebase desde CDN para que funcionen en el navegador): [PEGAR AQUÍ TU CONST FIREBASECONFIG QUE PUSISTE EN EL MENSAJE]
+
+Requisitos Funcionales (Rúbrica estricta):
+Multiusuario: Implementar Login y Registro con Firebase Auth (Email/Pass).
+Base de Datos (CRUD): Usar Firestore para guardar 'Transacciones' (monto, categoría, fecha, usuario_id). Permitir Crear, Leer, Editar y Borrar gastos/ingresos.
+Almacenamiento Local: Guardar preferencias del usuario (ej: modo oscuro o último idioma seleccionado) usando localStorage.
+Manejo de Ficheros: Permitir subir una imagen (ticket/factura) al crear un gasto. Usar Firebase Storage y guardar la URL en Firestore.
+Conexión API: Crear una sección 'Mercado' que consuma la API gratuita de CoinGecko o ExchangeRate para mostrar valor de divisas.
+Multiidioma: Implementar un botón para cambiar entre Español e Inglés (usando un objeto JSON local con las traducciones).
+Multipantalla: Usar un menú de navegación inferior (estilo app móvil) para cambiar entre vistas: Inicio (Dashboard), Movimientos, Inversiones (API), y Perfil.
+
+Requisito Crítico (PWA para APK): Para cumplir con la generación de APK via PWABuilder, necesito que generes también:
+Un archivo manifest.json completo (con nombre, iconos, theme_color, etc.).
+Un service-worker.js básico para caché y funcionalidad offline.
+
+Estilo: La interfaz debe ser 'Mobile First', que se vea perfecta en celular, pero adaptable a escritorio (Responsive). Usa CSS Grid/Flexbox.
+
+Explicación de lo realizado:
+Se ha implementado una Single Page Application (SPA) modular utilizando Vanilla JS.
+1. Estructura: Se separó la lógica en módulos (auth, firestore, api, i18n, utils) importados en app.js.
+2. UI: Diseño Mobile First con CSS Variables para fácil mantenimiento y soporte de Modo Oscuro. Navegación inferior fija.
+3. Firebase: Integración completa de Auth, Firestore y Storage.
+4. PWA: Se incluye manifest.json y service-worker.js para instalación y caché básico.
+5. Extras: Soporte multiidioma y persistencia de preferencias en LocalStorage.

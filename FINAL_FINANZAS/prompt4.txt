@@ -1,0 +1,27 @@
+Actúa como un Senior UI/UX Designer. Vamos a refinar el código del proyecto 'VELUT' porque la versión actual tiene fallos estéticos graves.
+
+1. CORRECCIÓN DE LA BARRA LATERAL (SIDEBAR)
+Iconos: PROHIBIDO usar emojis (❌🏠, 📊, 👤). Se ven infantiles. Debes usar Iconos SVG minimalistas de línea fina (outline). Puedes usar la librería 'Phosphor Icons' o 'Heroicons' vía CDN, o insertar los <svg> directamente en el HTML. Quiero iconos blancos/grises que se pongan del color acento (#059669) al pasar el ratón (:hover).
+Funcionalidad Colapsable: Añade un botón tipo 'Hamburguesa' (tres líneas) o una flecha '<' en la parte superior del sidebar.
+Al pulsarlo, el sidebar debe encogerse suavemente (transition: width 0.3s ease) mostrando solo los iconos y ocultando el texto.
+El contenido principal debe expandirse para ocupar el espacio libre.
+
+2. REPARACIÓN DEL ÁREA DERECHA ('Nuevo Movimiento')
+El Problema: Actualmente se ve un teclado numérico y una lista de emojis flotando a la derecha que rompen la armonía.
+La Solución (MODAL): Elimina ese formulario de la vista principal.
+Cuando el usuario pulse el botón verde principal '+ Nuevo Movimiento', debe abrirse una Ventana Modal Centrada (Pop-up) con un fondo oscuro translúcido (backdrop-filter: blur(5px)).
+Dentro del Modal es donde irá el teclado numérico grande y la selección de categoría, con un diseño limpio de tarjeta.
+Esto dejará el Dashboard limpio, mostrando solo las gráficas y la lista de transacciones.
+
+3. ESTÉTICA DE LOS DATOS (DASHBOARD)
+La tarjeta de 'Balance Total' está bien, pero el ojo (👁️) es un emoji feo. Cámbialo por un icono SVG de un ojo estilizado.
+Si no hay transacciones, muestra un mensaje elegante: 'No hay movimientos recientes' con una ilustración sutil o icono gris, en lugar de dejar el espacio vacío.
+
+4. ARCHIVO DE REGISTRO
+Genera el código corregido (index.html, style.css, app.js).
+Además, crea un archivo llamado prompt4.txt donde guardarás este prompt exacto y una breve explicación de 5 líneas sobre por qué el uso de Modales mejora la UX en aplicaciones financieras.
+
+--------------------------------------------------------------------------------
+
+Explicación sobre UX en Modales Financieros:
+El uso de Ventanas Modales (Pop-ups) mejora significativamente la UX en aplicaciones financieras porque focaliza la atención del usuario en una tarea crítica (introducir dinero) sin perder el contexto del Dashboard global. Al oscurecer el fondo, se eliminan distracciones visuales, reduciendo errores al teclear cantidades. Además, permite mantener la interfaz principal limpia y minimalista, mostrando herramientas complejas (como teclados numéricos) solo cuando son estrictamente necesarias (Progressive Disclosure).

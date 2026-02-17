@@ -1,0 +1,41 @@
+Actúa como un Senior Frontend Developer. Vamos a perfeccionar la funcionalidad crítica del 'Modal de Nuevo Movimiento' en nuestro proyecto VELUT.
+
+1. MEJORAS DE UI/UX EN EL MODAL
+Selector de Categorías: Actualmente se cortan los elementos (ej: 'Ingreso' no se ve).
+Cambia el contenedor de categorías a: display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding: 5px;.
+Oculta la barra de scroll (scrollbar-width: none) pero permite deslizar horizontalmente. Asegúrate de que todas las categorías (Ingreso, Ahorro, etc.) sean accesibles.
+Selector de Fecha y Hora: Añade un <input type='datetime-local'> justo debajo del monto.
+Lógica: Al abrir el modal, debe pre-rellenarse automáticamente con la fecha/hora actual (new Date().toISOString()...).
+El usuario debe poder tocarlo para cambiar la fecha si el gasto fue ayer.
+
+2. LÓGICA DEL TECLADO HÍBRIDO (DECIMALES Y FÍSICO)
+Soporte Decimal: Necesito poder introducir céntimos (ej: 12.50).
+Modifica el Grid del teclado numérico visual. Añade un botón de Punto (.) a la izquierda del 0 (y mueve la 'C' a otra posición o haz el grid de 4 columnas).
+Sincronización Teclado Físico: El usuario debe poder escribir con el teclado de su ordenador/móvil.
+Añade un 'EventListener' global para keydown. Si el modal está abierto y pulso números, Backspace o Punto en mi teclado físico, debe reflejarse en la pantalla igual que si tocara los botones virtuales.
+
+3. FUNCIONALIDAD DE ADJUNTAR TICKET (FIREBASE STORAGE)
+El botón 'Adjuntar Ticket' debe funcionar.
+Al hacer clic, debe abrir el selector de archivos del sistema (<input type='file' accept='image/*' hidden>).
+Al seleccionar una imagen, muestra una vista previa pequeña o el nombre del archivo al lado del botón.
+Al guardar el gasto: Sube primero la imagen a Firebase Storage (carpeta /tickets). Obtén la downloadURL y guárdala dentro del objeto del documento en Firestore (campo ticketUrl).
+
+4. ACTUALIZACIÓN DE ESTADO Y BALANCE
+Balance Negativo: Calcula Total = Ingresos - Gastos. Si el resultado es negativo (ej: -50€), el texto del Balance en el Dashboard debe ponerse en color ROJO (#EF4444) para alertar.
+Refresco Instantáneo: Cuando se guarde un nuevo movimiento:
+Cierra el modal.
+Limpia el formulario.
+IMPORTANTE: Actualiza la lista de 'Transacciones Recientes' y el 'Balance Total' en el Dashboard al instante (sin recargar la página F5).
+
+ENTREGABLE:
+Código actualizado (app.js, style.css, index.html).
+Genera un archivo prompt5.txt que contenga este prompt exacto y una breve explicación técnica de cómo has resuelto la sincronización del teclado físico.
+
+--------------------------------------------------------------------------------
+
+Explicación Técnica: Sincronización del Teclado Físico
+Para sincronizar el teclado físico, he implementado un `EventListener` global en el objeto `document` que escucha el evento `keydown`. Dentro de la función manejadora, primero verifico si el Modal está visible (comprobando la clase `.open` en el backdrop). Si el modal está activo, filtro las teclas presionadas (`e.key`).
+- Si es un número (0-9) o punto (.), invoco la misma lógica de actualización del display que usa el teclado virtual.
+- Si es `Backspace`, simulo el borrado del último carácter.
+- Si es `Enter`, disparo la acción de guardar.
+De esta forma, desacoplo la lógica de entrada de la interfaz táctil, permitiendo que cualquier fuente de input (físico o virtual) alimente el estado del display.

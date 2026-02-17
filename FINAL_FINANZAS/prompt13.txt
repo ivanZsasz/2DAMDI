@@ -1,0 +1,97 @@
+Actúa como un Lead Frontend Developer y UI/UX Expert.
+Objetivo: Arreglar errores graves de diseño y mejorar la experiencia de la pantalla de Mercado.
+
+=== 1. BUG CRÍTICO DE LAYOUT ===
+
+Problema identificado: El contenido de 'Mercado' se expande al 100% del viewport,
+cubriendo el Sidebar de navegación. Esto ocurre porque el contenedor principal
+no respeta el espacio reservado para la barra lateral.
+
+Solución técnica:
+- La clase .main-content debe tener un margin-left igual al ancho del sidebar (250px)
+- Alternativamente, usar un layout Flexbox donde sidebar y contenido sean hermanos
+- El sidebar debe tener position: fixed o sticky con z-index alto
+- En mobile, el sidebar se oculta y el contenido ocupa el 100%
+
+Media queries necesarias:
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 250px; /* Width del sidebar */
+    }
+}
+
+=== 2. LIMPIEZA Y MEJORAS DE UX ===
+
+A) Eliminar widget Fear & Greed:
+- Borrar tarjeta de Sentimiento Crypto del HTML
+- El usuario considera que no aporta valor a la app
+
+B) Mejorar Conversor de Divisas:
+El problema principal es la usabilidad. Los códigos ISO (CHF, CAD) no son
+intuitivos para usuarios no financieros.
+
+Solución: Mostrar BANDERA + NOMBRE COMPLETO en cada opción
+Implementación con mapa JS:
+const CURRENCIES = {
+    'EUR': { flag: '🇪🇺', name: 'Euro' },
+    'USD': { flag: '🇺🇸', name: 'Dólar USA' },
+    'GBP': { flag: '🇬🇧', name: 'Libra Esterlina' },
+    'JPY': { flag: '🇯🇵', name: 'Yen Japonés' },
+    'MXN': { flag: '🇲🇽', name: 'Peso Mexicano' },
+    'CHF': { flag: '🇨🇭', name: 'Franco Suizo' },
+    'CAD': { flag: '🇨🇦', name: 'Dólar Canadiense' },
+    'AUD': { flag: '🇦🇺', name: 'Dólar Australiano' }
+};
+
+C) Mejora visual del resultado:
+- Fuente monoespaciada ('Courier New', monospace)
+- Tamaño grande (2rem+)
+- Efecto de "pantalla de calculadora digital"
+
+=== 3. NUEVO WIDGET: BIG TECH STOCKS ===
+
+Propósito: Mostrar precios de las 3 acciones tecnológicas más importantes.
+
+Empresas seleccionadas:
+- Apple (AAPL)
+- Tesla (TSLA)  
+- Amazon (AMZN)
+
+API: Finnhub Stock API
+Endpoint: https://finnhub.io/api/v1/quote?symbol=[SYMBOL]&token=[API_KEY]
+
+Respuesta JSON esperada:
+{
+    "c": 150.25,  // Current price
+    "d": 2.50,    // Change
+    "dp": 1.69,   // Percent change
+    "h": 151.00,  // High
+    "l": 148.50,  // Low
+    "o": 149.00,  // Open
+    "pc": 147.75  // Previous close
+}
+
+Diseño: 3 tarjetas horizontales con logo/icono, precio actual, y cambio % coloreado.
+
+API Key de prueba: sand_c1s0qfiad3i891000000 (demo pública de Finnhub)
+
+=== 4. NUEVO WIDGET: TOP MOVERS (Trending Crypto) ===
+
+Propósito: Mostrar las criptomonedas que son tendencia HOY.
+
+API: CoinGecko Trending
+Endpoint: https://api.coingecko.com/api/v3/search/trending
+
+Respuesta: Devuelve las top 7 monedas trending. Mostraremos las 3 primeras.
+
+Diseño:
+- Tarjetas con icono de fuego 🔥
+- Nombre de la moneda
+- Símbolo
+- Ranking de mercado
+
+=== ARCHIVOS A MODIFICAR ===
+
+1. css/style.css - Corregir layout sidebar, estilos nuevos widgets
+2. index.html - Eliminar Fear&Greed, añadir Stocks y Trending
+3. js/app.js - Lógica banderas, loadStocks(), loadTrending()

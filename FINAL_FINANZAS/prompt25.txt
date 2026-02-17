@@ -1,0 +1,40 @@
+PROMPT 25 - SISTEMA MULTI-CUENTA (WALLET)
+
+CONTEXTO: Se ha realizado una reestructuración mayor de VELUT para pasar de saldo único a sistema multi-cuenta.
+
+CAMBIOS REALIZADOS:
+
+1. NUEVO MODELO DE DATOS (Firestore):
+   - Subcolección: users/{uid}/accounts/{accountId}
+   - Campos: name, balance, type (bank/cash/savings), isMain, color, createdAt
+   - Cuenta por defecto "Cuenta Principal" con €1000 de bienvenida
+
+2. NUEVA PANTALLA "CARTERA" (Navbar):
+   - Patrimonio Neto: Suma de todos los saldos
+   - Grid de tarjetas estilo tarjeta de crédito (chip dorado, número ficticio, logo Clearbit)
+   - Botón "Nueva Cuenta": Modal para crear cuenta (nombre, tipo, saldo, color)
+   - Cada tarjeta tiene botón "🔄 Mover" para traspasos internos
+
+3. TRASPASOS INTERNOS (Atómicos):
+   - Origen (read-only) → Destino (dropdown) → Cantidad
+   - Transacción atómica: resta de A, suma a B
+   - Registro con categoría "Traspaso" (neutro para gasto mensual)
+
+4. DASHBOARD ACTUALIZADO:
+   - Muestra "Cuenta Principal" en vez de "Balance Total"
+   - Saldo proviene de la cuenta con isMain: true
+
+5. MODAL NUEVO MOVIMIENTO:
+   - Selector "Cuenta de Origen" al inicio del formulario
+   - Por defecto selecciona la cuenta principal
+   - Al guardar, resta/suma de esa cuenta específica
+
+6. P2P ACTUALIZADO:
+   - sendMoney ahora opera sobre la cuenta principal de cada usuario
+   - Busca la cuenta principal del destinatario para acreditar
+
+ARCHIVOS MODIFICADOS:
+- js/firestore.js: initAccounts, listenToAccounts, createAccount, internalTransfer, getMainAccount
+- js/app.js: initWallet, renderAccountCards, handleCreateAccount, openTransferModal, handleInternalTransfer, populateAccountSelector
+- index.html: Sidebar + wallet section + modales + account selector
+- css/style.css: Credit card styling (.account-card, .card-chip, .card-bottom, etc.)

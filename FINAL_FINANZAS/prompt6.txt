@@ -1,0 +1,30 @@
+Actúa como un Senior Fullstack Developer experto en Debugging. Tenemos errores críticos de UX y funcionalidad en el modal de 'Nuevo Movimiento' que debemos arreglar urgentemente.
+
+1. ARREGLO VISUAL DE CATEGORÍAS (Grid vs Scroll)
+Problema: El usuario odia tener que deslizar lateralmente para ver las categorías.
+Solución: Cambia el CSS del contenedor de categorías.
+Usa display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;.
+Esto hará que las categorías se organicen en varias filas automáticamente y se vean TODAS de un vistazo.
+Reduce ligeramente el tamaño de los botones de categoría (padding y fuente) para que quepan bien sin saturar.
+
+2. ARREGLO DEL INPUT FECHA
+Asegúrate de usar <input type='datetime-local' class='date-input'>.
+Mejora: Al lado de este input, añade un botón pequeño o un texto clicable que diga 'Hoy'. Al pulsarlo, debe poner la fecha/hora actual automáticamente.
+Estiliza el input para que parezca un botón sólido (fondo gris claro, bordes redondeados), así el usuario siente que está 'confirmado' visualmente.
+
+3. REPARACIÓN CRÍTICA: BOTÓN GUARDAR (Logic Fix)
+Problema: Al hacer clic en 'Guardar', NO PASA NADA.
+Solución Técnica: Revisa el EventListener del botón.
+Validación: Comprueba que monto != 0 y que hay una categoría seleccionada. Si no, muestra un alert('Faltan datos').
+Firebase: Asegúrate de que la función addDoc(collection(db, 'transactions')...) se está ejecutando correctamente.
+Feedback Visual: Al pulsar, cambia el texto del botón a 'Guardando...'.
+ACTUALIZACIÓN DOM (Vital): Una vez que Firebase confirme el guardado (await addDoc...):
+Cierra el Modal.
+Limpia los inputs (reset).
+Llama inmediatamente a la función que carga las transacciones (loadTransactions()) para que el nuevo gasto aparezca en la lista DE INMEDIATO sin recargar la página.
+Muestra un aviso flotante (Toast): 'Movimiento guardado'.
+
+4. FORMATO DE ENTREGA
+Dame el código corregido de style.css (para las categorías) y app.js (lógica de guardado).
+Crea el archivo prompt6.txt con estas instrucciones.
+Nota: Si usas form en el HTML, asegúrate de poner e.preventDefault() en el submit para que la página no se recargue sola.
