@@ -1,0 +1,38 @@
+Actúa como un Experto en Integraciones API y Javascript Asíncrono. Vamos a implementar la funcionalidad 'Estrella' del proyecto VELUT: Lectura automática de tickets con IA (OCR) usando la API REST de Mindee.
+
+IMPORTANTE:
+No uses librerías externas (require). Usa fetch() nativo del navegador.
+Mantén toda la funcionalidad anterior (guardado manual, selector de fechas, etc.). Esto es un añadido.
+
+1. MODIFICACIÓN DEL MODAL (Nuevo Botón)
+En el Modal 'Nuevo Movimiento', añade un botón nuevo en la parte superior, encima del monto o al lado de las categorías.
+Texto: '📸 Escanear Ticket con IA'.
+Estilo: Que destaque (un gradiente o color diferente al de 'Adjuntar').
+Acción: Al hacer clic, debe abrir un input oculto de tipo file (accept='image/*' capture='environment') para abrir directo la cámara en móviles.
+
+2. LÓGICA DE LA API (Integración Mindee)
+Crea una función asíncrona scanTicket(file).
+Endpoint: https://api.mindee.net/v1/products/mindee/expense_receipts/v5/predict
+Método: POST
+Headers:
+Authorization: Token md_34CsPE0JHTltOouIaZ6gNk7v_HWs43bZe5K4u6T7LXQ
+Body: Un objeto FormData donde adjuntes el archivo con la clave document.
+
+3. PROCESADO DE LA RESPUESTA (La Magia)
+UX: Muestra un spinner o cambia el texto del botón a '🔮 Analizando ticket...' y bloquea los inputs mientras carga.
+Cuando recibas el JSON (data.document.inference.prediction):
+Total: Busca total.amount y asígnalo al input de monto.
+Fecha: Busca date.value (suele venir en YYYY-MM-DD) y asígnalo al input de fecha.
+Categoría: Mira el campo category.value. Haz un pequeño switch o if/else:
+Si es 'food' -> selecciona la categoría 'Comida'.
+Si es 'transport' -> selecciona 'Transporte'.
+Si es 'entertainment' -> selecciona 'Ocio'.
+(Si no coincide, déjalo sin marcar para que el usuario elija).
+Comercio: Muestra una notificación (Toast) que diga: 'Detectado ticket de [supplier.value]'.
+
+4. GESTIÓN DE LA IMAGEN
+Una vez leído el ticket, NO lo descartes. Llama a la función de subir a Firebase Storage (la que ya tienes hecha para el adjuntar manual) para que la imagen se guarde asociada al gasto.
+
+ENTREGABLE:
+Código actualizado de app.js (lógica) y ajustes en index.html/style.css para el nuevo botón.
+Genera el archivo prompt7.txt con estas instrucciones.

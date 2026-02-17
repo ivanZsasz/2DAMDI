@@ -1,0 +1,4 @@
+Implementación Splash Screen:
+1. HTML: Añadido div#splash-screen en index.html con SVG logo y textos.
+2. CSS: Añadidos estilos en style.css para posicionamiento fijo, z-index 9999, fondo oscuro y animación pulse.
+3. JS: Modificado app.js en onAuthStateChanged para mostrar splash, cargar datos, y ocultar splash tras 2000ms.

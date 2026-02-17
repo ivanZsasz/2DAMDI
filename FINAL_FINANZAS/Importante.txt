@@ -1,0 +1,187 @@
+# DOCUMENTACIÓN TÉCNICA DEL PROYECTO
+
+Un resumen de las funciones y APIs más críticas que impulsan la lógica de la aplicación financiera, con fragmentos de código clave.
+
+---
+
+## 📂 Archivos Principales
+
+### 1. `js/app.js` (Frontend Controller)
+Este archivo maneja la lógica de la interfaz, eventos y orquestación de servicios.
+
+#### `init()`
+Punto de entrada. Configura listeners globales, inicializa Firebase Auth y determina la vista inicial.
+```javascript
+async init() {
+    this.setupAuth();
+    this.setupNavigation();
+    
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            this.handleUserAuthenticated(user); // Carga datos
+        } else {
+            this.showAuthScreen(); // Muestra login
+        }
+    });
+}
+```
+
+#### `renderAccountCards(accounts)`
+Renderiza las tarjetas de la billetera con badges de tipo (Inversión/Ahorro) y eventos de click.
+```javascript
+renderAccountCards(accounts) {
+    const grid = document.getElementById('accounts-grid');
+    grid.innerHTML = '';
+    
+    accounts.forEach((acc) => {
+        const card = document.createElement('div');
+        // Badge de Interés si es inversión
+        const interestBadge = (acc.type === 'investment') ? 
+            `<span class="card-interest-badge">Generando ${acc.interestRate}% TAE</span>` : '';
+            
+        card.innerHTML = `
+            ${interestBadge}
+            <div class="card-balance">${utils.formatCurrency(acc.balance)}</div>
+            <div class="card-name">${acc.name}</div>
+        `;
+        // Click para ver historial
+        card.addEventListener('click', () => this.selectAccount(acc.id, card));
+        grid.appendChild(card);
+    });
+}
+```
+
+#### `simulateDailyInterest(accountId)`
+Lógica del frontend para el botón de "Simular Interés Diario".
+```javascript
+async simulateDailyInterest(accountId) {
+    const acc = firestoreManager.accounts.find(a => a.id === accountId);
+    // Fórmula de interés diario con hack de demo (mínimo 0.01€)
+    let ganancia = acc.balance * (acc.interestRate / 100) / 365;
+    if (acc.balance > 0) ganancia = Math.max(0.01, ganancia);
+    
+    await firestoreManager.simulateDailyInterest(auth.currentUser, accountId, ganancia);
+    this.showToast(`¡Has generado +${utils.formatCurrency(ganancia)} hoy! 💰`);
+}
+```
+
+#### `initCryptoTicker()` (CoinGecko API)
+Consume la API de CoinGecko para mostrar precios de criptomonedas en tiempo real.
+```javascript
+async initCryptoTicker() {
+    // API Call pública
+    const response = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=eur'
+    );
+    const data = await response.json();
+    // Renderiza el ticker con animación CSS
+}
+```
+
+### 2. `js/firestore.js` (Backend & Database Logic)
+Centraliza todas las operaciones con Firebase Firestore.
+
+#### `createAccount(user, data)`
+Crea nuevas cuentas (ej. desde el Marketplace) con soporte para `interestRate`.
+```javascript
+createAccount: async (user, data) => {
+    await addDoc(collection(db, "users", user.uid, "accounts"), {
+        name: data.name,
+        balance: 0,
+        type: data.type || 'bank', // 'investment', 'savings'
+        interestRate: data.interestRate || null,
+        createdAt: new Date().toISOString()
+    });
+}
+```
+
+#### `simulateDailyInterest(user, accountId, ganancia)` (**CRÍTICA**)
+Ejecuta una transacción atómica (`runTransaction`) para garantizar consistencia.
+```javascript
+simulateDailyInterest: async (user, accountId, ganancia) => {
+    const accountRef = doc(db, "users", user.uid, "accounts", accountId);
+    
+    await runTransaction(db, async (transaction) => {
+        // 1. Lectura
+        const accountSnap = await transaction.get(accountRef);
+        const currentBalance = accountSnap.data().balance || 0;
+        
+        // 2. Escritura (Update Saldo)
+        transaction.update(accountRef, { 
+            balance: currentBalance + ganancia 
+        });
+    });
+
+    // 3. Registro de Transacción (Income)
+    await addDoc(collection(db, "users", user.uid, "transactions"), {
+        type: 'income',
+        category: 'Intereses',
+        amount: ganancia,
+        date: new Date().toISOString()
+    });
+},
+```
+
+#### `internalTransfer(user, fromId, toId, amount)` (**CRÍTICA**)
+Mueve fondos entre cuentas propias de forma atómica.
+```javascript
+internalTransfer: async (user, fromId, toId, amount) => {
+    await runTransaction(db, async (transaction) => {
+        // Lecturas
+        const fromSnap = await transaction.get(fromRef);
+        const toSnap = await transaction.get(toRef);
+        
+        if (fromSnap.data().balance < amount) throw new Error("Saldo insuficiente");
+
+        // Escrituras (Resta y Suma simultáneas)
+        transaction.update(fromRef, { balance: fromBalance - amount });
+        transaction.update(toRef, { balance: toBalance + amount });
+    });
+}
+```
+
+---
+
+## 🌐 APIs Externas Integradas
+
+### 1. Firebase (Google)
+Base de datos NoSQL en tiempo real.
+```javascript
+import { initializeApp } from "firebase/app";
+import { getFirestore, onSnapshot } from "firebase/firestore";
+// onSnapshot permite escuchar cambios en tiempo real
+onSnapshot(collection(db, "transactions"), (snapshot) => {
+    const transactions = snapshot.docs.map(doc => doc.data());
+    app.renderTransactions(transactions);
+});
+```
+
+### 2. Frankfurter API (Divisas)
+API Open Source para tipos de cambio del BCE.
+```javascript
+const host = 'https://api.frankfurter.app';
+const resp = await fetch(`${host}/latest?amount=${amount}&from=${from}&to=${to}`);
+const data = await resp.json();
+// Resultado: data.rates[to]
+```
+
+### 3. Finnhub.io (Stocks)
+Datos del mercado de valores en tiempo real.
+```javascript
+const token = 'ct...'; // API Key
+const symbol = 'AAPL';
+const resp = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${token}`);
+const data = await resp.json();
+// data.c = Current Price, data.dp = Percent Change
+```
+
+### 4. Web Speech API (Voz)
+Reconocimiento de voz nativo.
+```javascript
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.onresult = (event) => {
+    const command = event.results[0][0].transcript;
+    this.processVoiceCommand(command); // "Gasto de 50 euros en comida"
+};
+recognition.start();
+```

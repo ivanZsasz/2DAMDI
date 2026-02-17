@@ -1,0 +1,37 @@
+Actúa como un Senior UI Designer y Frontend Developer. Vamos a arreglar el diseño de la pantalla de 'Análisis' (actualmente se ve muy gris y con poco contraste) y añadir una funcionalidad clave.
+
+1. REDISEÑO VISUAL (Efecto Glassmorphism REAL)
+
+Adiós al Gris Sólido: Cambia el fondo de las tarjetas (KPIs y Gráfico) a un estilo vidrio real:
+
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(10px);
+border: 1px solid rgba(255, 255, 255, 0.1);
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+border-radius: 24px;
+
+Tipografía y Contraste:
+- Los títulos ('Gasto Total', 'Comida') deben ser color gris claro (#9CA3AF).
+- Los Números (€60.00) deben ser BLANCOS, más grandes (2rem) y con peso 'Bold'.
+- Los iconos de las tarjetas deben tener un fondo circular con el color de acento.
+
+2. MEJORA DEL GRÁFICO (Chart.js)
+
+- Elimina el contenedor gris gigante que envuelve al gráfico.
+- cutout: '75%' (Más fino y elegante).
+- borderWidth: 0 (Sin bordes blancos).
+- Leyenda a la derecha en PC.
+
+3. NUEVA FUNCIONALIDAD: EXPORTAR PDF
+
+- Importar jspdf via CDN.
+- Botón '📄 Descargar Reporte'.
+- Generar PDF con título, fecha, gasto total y lista de gastos.
+
+---
+
+EXPLICACIÓN:
+
+1. Actualizaré `css/style.css` con los nuevos estilos glassmorphism oscuros.
+2. Añadiré jsPDF CDN a `index.html` y un botón de exportar.
+3. En `js/app.js`, actualizaré la configuración del chart y añadiré `exportAnalysisPDF()`.

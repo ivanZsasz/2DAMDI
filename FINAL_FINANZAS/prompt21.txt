@@ -1,0 +1,55 @@
+Actúa como un Senior Product Manager y Frontend Developer experto en Fintech. Vamos a crear un flujo de contratación de productos financieros simulados.
+
+1. ESCAPARATE DE PRODUCTOS (Pantalla 'Mercado')
+
+Añade una nueva sección al principio o final de la pantalla 'Mercado' llamada 'Productos VELUT'.
+
+Crea dos tarjetas promocionales muy visuales (Premium UI):
+
+Tarjeta 1: 'Fondo Monetario Flexible' | Rendimiento: 1.20% TIR | Etiqueta: 'Bajo Riesgo'.
+
+Tarjeta 2: 'Cuenta Remunerada' | Rendimiento: 1.25% TAE / 1.25% TIN | Etiqueta: 'Capital Garantizado'.
+
+Ambas tarjetas deben tener un botón de acción principal: 'Contratar ahora'.
+
+2. LOS DISCLAIMERS LEGALES (Modales de Contratación)
+
+Al hacer clic en 'Contratar', NO se crea la cuenta al instante. Se abre un Modal legal.
+
+Modal del Fondo Monetario:
+
+Texto largo simulando términos legales: 'La inversión en fondos monetarios está sujeta a fluctuaciones del mercado. La TIR del 1.20% es variable y se basa en el rendimiento diario de bonos gubernamentales a corto plazo. Rentabilidades pasadas no garantizan rentabilidades futuras. Riesgo 1/6.'
+
+Modal de Cuenta Remunerada:
+
+Texto legal: 'Cuenta a la vista remunerada al 1.25% TAE. Liquidación de intereses mensual. Su dinero está 100% garantizado por el Fondo de Garantía de Depósitos (FGD) hasta 100.000€.'
+
+Elementos obligatorios en ambos modales:
+
+Un Checkbox desmarcado por defecto: 'He leído, comprendido y acepto los riesgos y condiciones de este producto.'
+
+Un botón 'Confirmar Contratación' que solo se habilite (deje de estar disabled) cuando el checkbox esté marcado.
+
+3. LÓGICA DE CREACIÓN (Firebase y Cartera)
+
+Al pulsar 'Confirmar Contratación', ejecuta una función que añada un nuevo documento a la subcolección accounts del usuario en Firestore.
+
+Datos de la nueva cuenta:
+
+name: 'Fondo Monetario' o 'Cuenta Remunerada'.
+
+balance: 0 (Empieza vacía).
+
+type: 'investment' o 'savings'.
+
+interestRate: 1.20 o 1.25.
+
+Cierra el modal y muestra un SweetAlert/Notificación: '¡Enhorabuena! Tu cuenta se ha creado. Ve a la pestaña Cartera para ingresar tu primer depósito.'
+
+Opcional: Haz desaparecer el botón de "Contratar" en el Mercado si el usuario ya tiene esa cuenta creada, cambiando el texto a "Ya contratado".
+
+4. VISUALIZACIÓN EN LA CARTERA (Wallet)
+
+Como ya tenemos la lógica de la Cartera (Prompt 25), estas nuevas cuentas aparecerán automáticamente allí con saldo 0€.
+
+Ajuste visual: Si el type de la cuenta es 'investment' o 'savings', ponle un borde dorado o una pequeña insignia/badge en la tarjeta que diga 'Generando X% TAE' para que destaquen sobre la cuenta de banco normal.

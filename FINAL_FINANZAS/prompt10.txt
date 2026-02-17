@@ -1,0 +1,28 @@
+Actúa como un Senior Frontend Developer y Especialista en Generación de Documentos. Vamos a elevar el nivel de la app 'VELUT'.
+
+1. CORRECCIÓN URGENTE DE UI (ANÁLISIS)
+
+Problema: En la pantalla de Análisis, los textos se pierden. El contraste es bajo.
+
+Solución CSS:
+- Fuerza que TODOS los números y títulos principales sean de color Blanco Puro (#FFFFFF).
+- Los subtítulos (ej: 'Promedio Diario') ponlos en un gris perla muy claro (#E5E7EB).
+- Aumenta el padding interno de las tarjetas para que el texto respire.
+- Asegúrate de que la leyenda del gráfico tenga texto blanco, no gris oscuro.
+
+2. NUEVO MOTOR DE REPORTES PDF (Estilo Extracto Bancario)
+
+Importación: jspdf-autotable CDN.
+
+Diseño del PDF:
+- Cabecera Corporativa: Logo 'VELUT', datos del usuario, línea separadora.
+- Tabla de Movimientos: Columnas FECHA, CATEGORÍA, TIPO, IMPORTE. Estilo zebra stripes.
+- Pie de Página: Saldo Total + texto legal.
+
+---
+
+EXPLICACIÓN:
+
+1. Actualizaré el CSS para forzar colores blancos puros en valores y gris perla en etiquetas.
+2. Añadiré jspdf-autotable al index.html.
+3. Reescribiré exportAnalysisPDF() para generar un PDF estilo extracto bancario con tabla autoTable.

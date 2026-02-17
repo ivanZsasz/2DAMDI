@@ -1,0 +1,61 @@
+Actúa como un Senior Frontend Developer. Vamos a implementar el requisito de 'Multiidioma' (i18n) de forma limpia y escalable, SIN modificar ni romper ninguna lógica de Firebase ni el diseño actual.
+
+1. EL DICCIONARIO DE IDIOMAS (JavaScript)
+
+En app.js (o en un nuevo archivo i18n.js si lo prefieres), crea un objeto global const translations = { es: {...}, en: {...} }.
+
+Incluye las traducciones clave de la interfaz. Ejemplos de claves:
+
+nav.home: 'Inicio' / 'Home'
+
+nav.analysis: 'Análisis' / 'Analysis'
+
+nav.wallet: 'Cartera' / 'Wallet'
+
+nav.market: 'Mercado' / 'Market'
+
+nav.profile: 'Perfil' / 'Profile'
+
+profile.settings: 'Ajustes' / 'Settings'
+
+profile.language: 'Idioma' / 'Language'
+
+(Nota para el agente: Añade unas 15-20 claves principales que cubran los títulos, botones del menú y textos estáticos de las tarjetas de inicio).
+
+2. MODIFICACIÓN DEL HTML (Atributos Seguros)
+
+NO reescribas la estructura HTML. Simplemente añade el atributo data-i18n="[clave]" a los elementos de texto estático que deban traducirse.
+
+Ejemplo: <span class="nav-text" data-i18n="nav.home">Inicio</span>
+
+3. SELECTOR DE IDIOMA EN LA UI (Pantalla Perfil)
+
+En la pantalla de Perfil, dentro de la sección 'Ajustes' (donde está el Modo Oscuro), añade una nueva fila.
+
+Elemento: Un <select id="language-selector"> con las opciones:
+
+<option value="es">🇪🇸 Español</option>
+
+<option value="en">🇬🇧 English</option>
+
+4. LÓGICA DE CAMBIO Y PERSISTENCIA (LocalStorage)
+
+Crea la función changeLanguage(lang).
+
+Flujo:
+
+Selecciona todos los elementos con [data-i18n].
+
+Itera sobre ellos y cambia su textContent (o placeholder si es un input) usando el valor correspondiente del objeto translations[lang].
+
+Guarda la preferencia en el disco del usuario: localStorage.setItem('velut_lang', lang);.
+
+Inicialización: Al cargar la app, lee localStorage.getItem('velut_lang'). Si existe, aplica ese idioma. Si no, usa 'es' por defecto. Actualiza el valor del <select> para que coincida.
+
+ENTREGABLE:
+
+Código JS con el diccionario y la función changeLanguage.
+
+Código HTML del <select> de idiomas en el Perfil y atributos data-i18n añadidos a los menús.
+
+Archivo prompt23.txt

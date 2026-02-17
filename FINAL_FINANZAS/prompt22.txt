@@ -1,0 +1,37 @@
+Actúa como un Senior Fullstack Developer y Arquitecto Fintech. Vamos a dotar de interactividad a la pantalla de 'Cartera', permitiendo ver los movimientos específicos de cada cuenta y simulando el pago de intereses diarios para las cuentas de inversión.
+
+1. INTERACTIVIDAD DE LAS TARJETAS (Selección de Cuenta)
+
+Haz que las tarjetas de las cuentas en la pantalla 'Cartera' sean clickables.
+
+Al hacer clic en una tarjeta, esta debe quedar 'Activa' (añádele una clase CSS como .ring-4 .ring-blue-500 o un borde brillante).
+
+2. SECCIÓN: HISTORIAL DE LA CUENTA
+
+Debajo del grid de tarjetas, crea una nueva sección: <div id="account-history-container">.
+
+Estado vacío: Si no hay ninguna tarjeta seleccionada, muestra el texto: 'Selecciona una cuenta para ver sus movimientos'.
+
+Lógica de Filtrado: Al hacer clic en una tarjeta, haz una consulta a la colección transactions de Firebase, filtrando por el accountId de la tarjeta seleccionada.
+
+Renderizado: Muestra la lista de movimientos (Fecha, Concepto, Importe en verde/rojo), pero SOLO los de esa cuenta (gastos, ingresos y traspasos internos).
+
+3. EL SIMULADOR DE INTERESES DIARIOS (Solo para Cuentas Remuneradas)
+
+Si el usuario selecciona una cuenta cuyo type sea 'investment' o 'savings', muestra un botón extra encima de su historial: '⏱️ Simular 1 Día (Interés Diario)'.
+
+Lógica de la función simulateDailyInterest(accountId, currentBalance, interestRate):
+
+Cálculo Diario: La fórmula es ganancia = currentBalance * (interestRate / 100) / 365.
+
+Demo Hack (Importante): Si ganancia es mayor que 0 pero menor que 0.01, redondea forzosamente a 0.01 usando Math.max(0.01, ganancia). Esto es vital para que en la demo de la app siempre se vea al menos 1 céntimo de ingreso, evitando que la UI muestre +0.00€.
+
+Transacción Segura (Firestore): Usa db.runTransaction para:
+
+Sumar la ganancia calculada al balance de esa cuenta.
+
+Crear un nuevo documento en transactions con: type: 'income', category: 'Intereses', concept: 'Abono de interés diario', amount: parseFloat(ganancia.toFixed(2)), accountId: cuentaActual.id, y la fecha actual.
+
+Feedback UI: Muestra un pequeño Toast o SweetAlert: '¡Has generado +X€ hoy!'.
+
+Actualiza el saldo en la tarjeta y recarga la lista de movimientos para que el nuevo ingreso pasivo aparezca al instante en color verde.

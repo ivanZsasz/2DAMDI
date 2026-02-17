@@ -1,0 +1,73 @@
+Actúa como un Senior Fullstack Developer. Vamos a implementar la funcionalidades estrella: Transferencias P2P (Simuladas).
+
+CAMBIO DE ESTRUCTURA (Navigation):
+
+El cliente requiere esta funcionalidad muy accesible.
+
+Acción: Añade un nuevo ítem en la Barra Lateral (Sidebar) de navegación.
+
+Posición: Estrictamente entre 'Inicio' y 'Análisis'.
+
+Texto: 'Transferencias'.
+
+Icono: Usa un icono de flechas cruzadas o billetes (ej: fa-exchange-alt o similar).
+
+Comportamiento: Al hacer clic, oculta las otras secciones y muestra la nueva sección 'Transferencias'.
+
+1. DISEÑO DE LA NUEVA PANTALLA 'TRANSFERENCIAS'
+
+Crea una sección <section id='transfers-view'> (oculta por defecto).
+
+Layout:
+
+Tarjeta Superior (Saldo): Muestra 'Tu Saldo VELUT' en grande (ej: 1.000,00 €). Fondo con gradiente elegante (Dorado o Verde).
+
+Formulario de Envío:
+
+Input: 'Email del Destinatario' (con validación de formato).
+
+Input: 'Cantidad (€)' (type number).
+
+Botón Grande: '💸 Enviar Dinero Ahora'.
+
+Historial Reciente: Una tabla o lista debajo que muestre solo las transferencias (Enviado/Recibido).
+
+2. LÓGICA BACKEND (Firestore Transactions - A prueba de fallos)
+
+Modifica app.js para manejar saldos.
+
+Inicialización: Al cargar el perfil/app, si el usuario no tiene campo balance en su documento de users, asígnale 1000 (Bono de Bienvenida).
+
+Función sendMoney(email, amount):
+
+Usa db.runTransaction para que sea atómico (evita errores si se va la conexión).
+
+Validaciones Críticas (Deben dar error visible):
+
+Email destinatario no existe en la colección users.
+
+Email destinatario == Email propio (No auto-envíos).
+
+Cantidad > Saldo actual (No números rojos).
+
+Cantidad <= 0.
+
+Ejecución:
+
+Resta amount al emisor.
+
+Suma amount al receptor.
+
+Crea un registro en transactions para el emisor (Tipo: 'Gasto', Categoría: 'Transferencia Enviada').
+
+Crea un registro en transactions para el receptor (Tipo: 'Ingreso', Categoría: 'Transferencia Recibida').
+
+3. FEEDBACK AL USUARIO
+
+Tras el envío exitoso:
+
+Muestra una animación o SweetAlert (o Toast): '¡Envío Exitoso!'.
+
+Limpia los inputs.
+
+Actualiza el Saldo visualmente al instante (sin recargar la página).
