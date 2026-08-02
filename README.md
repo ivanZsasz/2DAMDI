@@ -32,8 +32,7 @@
 
 | Pantalla de Acceso | Dashboard Principal |
 | :---: | :---: |
-| ![Login](docs/login.jpg) | ![Dashboard](docs/dashboard.png) |
-
+| ![Login](docs/Login.png) | ![Dashboard](docs/dashboard.png) |
 ---
 
 ## ⚙️ Requisitos e Instalación
